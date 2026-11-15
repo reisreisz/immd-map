@@ -309,33 +309,36 @@
     // Cache computed walking routes to make switching instant
     const routeCache = {};
 
-    async function fetchOpenStreetMapRoute(startCoord, endCoord) {
-      const cacheKey = `${startCoord[0]},${startCoord[1]}-${endCoord[0]},${endCoord[1]}`;
-      if (routeCache[cacheKey]) return routeCache[cacheKey];
+   // Replace your existing fetchOpenStreetMapRoute function with this:
+  async function fetchOpenStreetMapRoute(startCoord, endCoord) {
+  const cacheKey = `${startCoord[0]},${startCoord[1]}-${endCoord[0]},${endCoord[1]}`;
+  if (routeCache[cacheKey]) return routeCache[cacheKey];
 
-      let routeCoords = [startCoord, endCoord];
-      let meters = Math.round(L.latLng(startCoord[0], startCoord[1]).distanceTo(L.latLng(endCoord[0], endCoord[1])));
-      let mins = Math.max(1, Math.round(meters / 75));
+  let routeCoords = [startCoord, endCoord];
+  let meters = Math.round(L.latLng(startCoord[0], startCoord[1]).distanceTo(L.latLng(endCoord[0], endCoord[1])));
+  let mins = Math.max(1, Math.round(meters / 75));
 
-      try {
-        const url = `https://router.project-osrm.org/route/v1/foot/${startCoord[1]},${startCoord[0]};${endCoord[1]},${endCoord[0]}?overview=full&geometries=geojson`;
-        const response = await fetch(url);
-        const data = await response.json();
+  try {
+    // Explicitly use the 'foot' profile with pedestrian pathways enabled
+    const url = `https://router.project-osrm.org/route/v1/foot/${startCoord[1]},${startCoord[0]};${endCoord[1]},${endCoord[0]}?overview=full&geometries=geojson&steps=true`;
+    const response = await fetch(url);
+    const data = await response.json();
 
-        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
-          const route = data.routes[0];
-          routeCoords = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
-          meters = Math.round(route.distance);
-          mins = Math.max(1, Math.round(route.duration / 60));
-        }
-      } catch (e) {
-        // Fallback to straight line if offline
-      }
-
-      const result = { routeCoords, meters, mins };
-      routeCache[cacheKey] = result;
-      return result;
+    if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+      const route = data.routes[0];
+      routeCoords = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+      meters = Math.round(route.distance);
+      // Average walking speed ~4.8 km/h (80 meters per minute)
+      mins = Math.max(1, Math.round(meters / 80));
     }
+  } catch (e) {
+    // Fallback to straight line if offline
+  }
+
+  const result = { routeCoords, meters, mins };
+  routeCache[cacheKey] = result;
+  return result;
+}
 
     // 6. Real-Time GPS Blue Dot + OSRM Walking Route
     let watchId = null;
