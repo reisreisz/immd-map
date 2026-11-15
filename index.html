@@ -41,20 +41,21 @@
       background: #1a2b4c; color: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
-    /* Floating GPS Locate Button */
+    /* Floating GPS Locate & Route Button */
     .gps-btn {
       position: absolute; bottom: 245px; right: 14px; z-index: 1000;
-      width: 46px; height: 46px; border-radius: 50%;
+      height: 46px; padding: 0 14px; border-radius: 23px;
       background: #ffffff; border: 1.5px solid #e0e4ec;
       box-shadow: 0 4px 14px rgba(0,0,0,0.16);
-      display: flex; align-items: center; justify-content: center;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
       cursor: pointer; transition: all 0.2s ease; color: #1a2b4c;
+      font-size: 13px; font-weight: 700;
     }
-    .gps-btn:active { transform: scale(0.94); }
+    .gps-btn:active { transform: scale(0.95); }
     .gps-btn.tracking {
-      background: #0066cc; color: #ffffff; border-color: #0066cc;
+      background: #10b981; color: #ffffff; border-color: #10b981;
     }
-    .gps-btn svg { width: 22px; height: 22px; fill: currentColor; }
+    .gps-btn svg { width: 20px; height: 20px; fill: currentColor; flex-shrink: 0; }
 
     /* Pulsing User GPS Blue Dot */
     .user-dot-container { position: relative; width: 20px; height: 20px; }
@@ -119,11 +120,12 @@
     </div>
   </div>
 
-  <!-- Floating GPS Location Button -->
-  <button id="gps-btn" class="gps-btn" onclick="toggleGPS()" aria-label="My Location" title="Show My Location">
+  <!-- Floating GPS Walk-to-HQ Button -->
+  <button id="gps-btn" class="gps-btn" onclick="toggleGPS()" aria-label="Walk from My Location">
     <svg viewBox="0 0 24 24">
       <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
     </svg>
+    <span id="gps-btn-label">從我的位置步行</span>
   </button>
 
   <div id="map"></div>
@@ -140,8 +142,8 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // 1. Destination Coordinate: Immigration HQ (61 Po Yap Road)
-    const IMMD_HQ = [22.305454, 114.2562612];
+    // 1. Verified Destination Coordinate: Immigration HQ (61 Po Yap Road)
+    const IMMD_HQ = [22.305426, 114.256254];
 
     // 2. App State
     let currentLang = 'zh-HK';
@@ -158,7 +160,9 @@
         tabParking: '🅿️ 停車場',
         hqPopup: '<b>入境事務處總部</b><br>將軍澳寶邑路61號',
         startPrefix: '起點：',
+        gpsBtn: '從我的位置步行',
         myLocation: '<b>您的目前位置</b>',
+        walkEstimate: (mins, meters) => `<br><span style="color:#10b981;font-weight:700;">步行約 ${mins} 分鐘 (${meters}米)</span>`,
         gpsDenied: '無法取得位置。請在手機瀏覽器設定中允許存取「位置資訊」。',
         gpsUnsupported: '您的瀏覽器不支援 GPS 定位功能。'
       },
@@ -170,7 +174,9 @@
         tabParking: '🅿️ 停车场',
         hqPopup: '<b>入境事务处总部</b><br>将军澳宝邑路61号',
         startPrefix: '起点：',
+        gpsBtn: '从我的位置步行',
         myLocation: '<b>您的当前位置</b>',
+        walkEstimate: (mins, meters) => `<br><span style="color:#10b981;font-weight:700;">步行约 ${mins} 分钟 (${meters}米)</span>`,
         gpsDenied: '无法获取位置。请在手机浏览器设置中允许访问“位置信息”。',
         gpsUnsupported: '您的浏览器不支持 GPS 定位功能。'
       },
@@ -182,7 +188,9 @@
         tabParking: '🅿️ Parking',
         hqPopup: '<b>Immigration Headquarters</b><br>61 Po Yap Road',
         startPrefix: 'Start: ',
+        gpsBtn: 'Walk from My Location',
         myLocation: '<b>Your Current Location</b>',
+        walkEstimate: (mins, meters) => `<br><span style="color:#10b981;font-weight:700;">~${mins} min walk (${meters}m)</span>`,
         gpsDenied: 'Location access denied. Please enable Location Services in your phone browser settings.',
         gpsUnsupported: 'GPS geolocation is not supported by your browser.'
       }
@@ -199,9 +207,9 @@
             'en': 'Tseung Kwan O Station (Exit B1)'
           },
           time: {
-            'zh-HK': '步行 5 分鐘',
-            'zh-CN': '步行 5 分钟',
-            'en': '5 min walk'
+            'zh-HK': '步行 6 分鐘',
+            'zh-CN': '步行 6 分钟',
+            'en': '6 min walk'
           },
           desc: {
             'zh-HK': '經 PopCorn 及將軍澳中心有蓋行人天橋直達',
@@ -209,13 +217,9 @@
             'en': 'Sheltered walkway via PopCorn & Park Central Footbridge'
           },
           path: [
-            [22.3070641, 114.2591742,],
-            [22.3068135, 114.2585403,],
-            [22.3066589, 114.2584164],
-            [22.3063977, 114.2584942],
-            [22.3061258, 114.2578171,],
-            [22.3060138, 114.2578114,],
-            [22.3054487, 114.2562612],
+            [22.3077, 114.2600],
+            [22.3072, 114.2592],
+            [22.3063, 114.2575],
             IMMD_HQ
           ]
         },
@@ -227,9 +231,9 @@
             'en': 'Tiu Keng Leng Station (Exit A)'
           },
           time: {
-            'zh-HK': '步行 12 分鐘',
-            'zh-CN': '步行 12 分钟',
-            'en': '12 min walk'
+            'zh-HK': '步行 10 分鐘',
+            'zh-CN': '步行 10 分钟',
+            'en': '10 min walk'
           },
           desc: {
             'zh-HK': '沿寶邑路向東步行前往',
@@ -238,7 +242,7 @@
           },
           path: [
             [22.3046, 114.2528],
-            [22.3065, 114.2555],
+            [22.3056, 114.2550],
             IMMD_HQ
           ]
         }
@@ -252,9 +256,9 @@
             'en': 'Po Yap Road (Outside Park Central)'
           },
           time: {
-            'zh-HK': '步行 2 分鐘',
-            'zh-CN': '步行 2 分钟',
-            'en': '2 min walk'
+            'zh-HK': '步行 3 分鐘',
+            'zh-CN': '步行 3 分钟',
+            'en': '3 min walk'
           },
           desc: {
             'zh-HK': '途經路線：793, 795X, 796X, 798, E22A',
@@ -263,6 +267,7 @@
           },
           path: [
             [22.3071, 114.2579],
+            [22.3061, 114.2569],
             IMMD_HQ
           ]
         },
@@ -274,9 +279,9 @@
             'en': 'Tong Yin Street Stop'
           },
           time: {
-            'zh-HK': '步行 4 分鐘',
-            'zh-CN': '步行 4 分钟',
-            'en': '4 min walk'
+            'zh-HK': '步行 5 分鐘',
+            'zh-CN': '步行 5 分钟',
+            'en': '5 min walk'
           },
           desc: {
             'zh-HK': '途經路線：290X, 96, 114B',
@@ -285,7 +290,7 @@
           },
           path: [
             [22.3088, 114.2588],
-            [22.3081, 114.2578],
+            [22.3072, 114.2575],
             IMMD_HQ
           ]
         }
@@ -310,7 +315,7 @@
           },
           path: [
             [22.3066, 114.2585],
-            [22.3072, 114.2579],
+            [22.3060, 114.2571],
             IMMD_HQ
           ]
         },
@@ -322,9 +327,9 @@
             'en': 'PopCorn Car Park'
           },
           time: {
-            'zh-HK': '步行 5 分鐘',
-            'zh-CN': '步行 5 分钟',
-            'en': '5 min walk'
+            'zh-HK': '步行 6 分鐘',
+            'zh-CN': '步行 6 分钟',
+            'en': '6 min walk'
           },
           desc: {
             'zh-HK': '經 1 樓有蓋行人天橋前往寶邑路',
@@ -333,15 +338,15 @@
           },
           path: [
             [22.3081, 114.2602],
-            [22.3075, 114.2590],
+            [22.3068, 114.2580],
             IMMD_HQ
           ]
         }
       ]
     };
 
-    // 5. Initialize Map
-    const map = L.map('map', { zoomControl: false }).setView([22.3078, 114.2585], 16);
+    // 5. Initialize Map centered near verified Immigration HQ
+    const map = L.map('map', { zoomControl: false }).setView([22.3062, 114.2575], 16);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -355,11 +360,14 @@
     let currentLine = null;
     let startMarker = null;
 
-    // 6. Real-Time GPS Blue Dot Tracker
+    // 6. Real-Time GPS Blue Dot + Free OSRM Walking Route to HQ
     let watchId = null;
     let userMarker = null;
     let accuracyCircle = null;
-    let hasCenteredOnUser = false;
+    let gpsRouteLine = null;
+    let lastRoutedLatLng = null;
+    let lastWalkStats = null;
+    let hasFittedGpsRoute = false;
 
     const userDotIcon = L.divIcon({
       className: '',
@@ -376,22 +384,26 @@
         return;
       }
 
-      // If already tracking, re-center on user's current position
+      // If already tracking, re-fit view to show both user & Immigration HQ
       if (watchId !== null && userMarker) {
-        map.flyTo(userMarker.getLatLng(), 17, { duration: 0.8 });
+        if (gpsRouteLine) {
+          map.fitBounds(gpsRouteLine.getBounds(), { padding: [75, 75] });
+        } else {
+          map.flyTo(userMarker.getLatLng(), 17, { duration: 0.8 });
+        }
         userMarker.openPopup();
         return;
       }
 
       gpsBtn.classList.add('tracking');
-      hasCenteredOnUser = false;
+      hasFittedGpsRoute = false;
 
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
           const acc = pos.coords.accuracy;
-          const userLatLng = [lat, lng];
+          const userLatLng = L.latLng(lat, lng);
 
           if (!userMarker) {
             userMarker = L.marker(userLatLng, { icon: userDotIcon, zIndexOffset: 1000 })
@@ -411,10 +423,10 @@
             accuracyCircle.setRadius(acc);
           }
 
-          if (!hasCenteredOnUser) {
-            map.flyTo(userLatLng, 17, { duration: 0.8 });
-            userMarker.openPopup();
-            hasCenteredOnUser = true;
+          // Re-calculate walking route if first fix or user moved > 15 meters
+          if (!lastRoutedLatLng || userLatLng.distanceTo(lastRoutedLatLng) > 15) {
+            lastRoutedLatLng = userLatLng;
+            drawGpsWalkingRoute(lat, lng);
           }
         },
         (err) => {
@@ -428,6 +440,63 @@
           timeout: 10000
         }
       );
+    }
+
+    async function drawGpsWalkingRoute(userLat, userLng) {
+      // Remove preset transport route highlight when switching to live GPS walking route
+      if (currentLine) { map.removeLayer(currentLine); currentLine = null; }
+      if (startMarker) { map.removeLayer(startMarker); startMarker = null; }
+      document.querySelectorAll('.route-card').forEach(c => c.classList.remove('selected'));
+
+      let routeCoords = [[userLat, userLng], IMMD_HQ];
+      let meters = Math.round(L.latLng(userLat, userLng).distanceTo(L.latLng(IMMD_HQ)));
+      let mins = Math.max(1, Math.round(meters / 75)); // ~4.5 km/h walking speed fallback
+
+      try {
+        // Free OSRM Foot Routing API (No API key required; uses [lng, lat] order)
+        const url = `https://router.project-osrm.org/route/v1/foot/${userLng},${userLat};${IMMD_HQ[1]},${IMMD_HQ[0]}?overview=full&geometries=geojson`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          // Convert GeoJSON [lng, lat] back to Leaflet [lat, lng]
+          routeCoords = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+          meters = Math.round(route.distance);
+          mins = Math.max(1, Math.round(route.duration / 60));
+        }
+      } catch (e) {
+        // Silently falls back to direct path if offline/blocked
+      }
+
+      if (gpsRouteLine) map.removeLayer(gpsRouteLine);
+
+      // Draw emerald green dashed walking path from GPS location to Immigration HQ
+      gpsRouteLine = L.polyline(routeCoords, {
+        color: '#10b981',
+        weight: 6,
+        opacity: 0.9,
+        dashArray: '10, 10'
+      }).addTo(map);
+
+      lastWalkStats = { mins, meters };
+      updateUserPopup();
+
+      if (!hasFittedGpsRoute) {
+        map.fitBounds(gpsRouteLine.getBounds(), { padding: [75, 75] });
+        userMarker.openPopup();
+        hasFittedGpsRoute = true;
+      }
+    }
+
+    function updateUserPopup() {
+      if (!userMarker) return;
+      const t = uiStrings[currentLang];
+      let html = t.myLocation;
+      if (lastWalkStats) {
+        html += t.walkEstimate(lastWalkStats.mins, lastWalkStats.meters);
+      }
+      userMarker.setPopupContent(html);
     }
 
     // 7. Switch Language Handler
@@ -444,11 +513,17 @@
       document.getElementById('tab-mtr').textContent = t.tabMtr;
       document.getElementById('tab-bus').textContent = t.tabBus;
       document.getElementById('tab-parking').textContent = t.tabParking;
+      document.getElementById('gps-btn-label').textContent = t.gpsBtn;
 
       hqMarker.setPopupContent(t.hqPopup);
-      if (userMarker) userMarker.setPopupContent(t.myLocation);
+      updateUserPopup();
 
-      renderOptions(currentCategory, selectedIndex);
+      // Re-render cards without overriding active GPS route if GPS is currently showing
+      if (gpsRouteLine) {
+        renderOptions(currentCategory, -1);
+      } else {
+        renderOptions(currentCategory, selectedIndex);
+      }
     }
 
     // 8. Render Transport Options
@@ -483,12 +558,14 @@
       });
     }
 
-    // 9. Draw Route on Map
+    // 9. Draw Preset Transport Route on Map
     function selectRoute(item, cardElement, index) {
       selectedIndex = index;
       document.querySelectorAll('.route-card').forEach(c => c.classList.remove('selected'));
       cardElement.classList.add('selected');
 
+      // Clear live GPS walking line when user taps a specific MTR/Bus/Parking route
+      if (gpsRouteLine) { map.removeLayer(gpsRouteLine); gpsRouteLine = null; }
       if (currentLine) map.removeLayer(currentLine);
       if (startMarker) map.removeLayer(startMarker);
 
