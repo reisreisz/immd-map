@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>入境事務處總部(執法大樓)路線指南 | Immigration Headquarter (Enforcement Tower) Wayfinder</title>
+  <title>入境事務處總部(執法大樓)路線指南 | Immigration Headquarters (Enforcement Tower) Wayfinder</title>
   
   <!-- Leaflet CSS (Free Open-Source Map Library) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -43,7 +43,7 @@
 
     /* Floating GPS Locate & Route Button */
     .gps-btn {
-      position: absolute; bottom: 245px; right: 14px; z-index: 1000;
+      position: absolute; bottom: 255px; right: 14px; z-index: 1000;
       height: 46px; padding: 0 14px; border-radius: 23px;
       background: #ffffff; border: 1.5px solid #e0e4ec;
       box-shadow: 0 4px 14px rgba(0,0,0,0.16);
@@ -91,7 +91,7 @@
     .tab-btn.active { background: #1a2b4c; color: #fff; border-color: #1a2b4c; }
 
     /* Route Option Cards */
-    .options-list { display: flex; flex-direction: column; gap: 8px; max-height: 155px; overflow-y: auto; }
+    .options-list { display: flex; flex-direction: column; gap: 8px; max-height: 175px; overflow-y: auto; }
     .route-card {
       display: flex; justify-content: space-between; align-items: center; gap: 10px;
       padding: 12px; border-radius: 12px; border: 1.5px solid #eee;
@@ -110,7 +110,7 @@
 
   <div class="header">
     <div class="header-text">
-      <h1 id="ui-title">入境事務處總部(執法大樓)</h1>
+      <h1 id="ui-title">入境事務處總部 (執法大樓)</h1>
       <p id="ui-subtitle">將軍澳寶邑路61號 • 請在下方選擇交通工具</p>
     </div>
     <div class="lang-switcher" role="group" aria-label="Language Switcher">
@@ -141,7 +141,7 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // 1. Destination Coordinate: Immigration HQ (61 Po Yap Road)
+    // 1. Destination Coordinate: Immigration HQ - Enforcement Tower (61 Po Yap Road)
     const IMMD_HQ = [22.305426, 114.256254];
 
     // 2. App State
@@ -157,7 +157,7 @@
         tabMtr: '🚇 港鐵',
         tabBus: '🚌 巴士',
         tabParking: '🅿️ 停車場',
-        hqPopup: '<b>入境事務處總部</b><br>將軍澳寶邑路61號',
+        hqPopup: '<b>入境事務處總部 (執法大樓)</b><br>將軍澳寶邑路61號',
         startPrefix: '起點：',
         gpsBtn: '從我的位置步行',
         myLocation: '<b>您的目前位置</b>',
@@ -172,7 +172,7 @@
         tabMtr: '🚇 地铁/港铁',
         tabBus: '🚌 公交/巴士',
         tabParking: '🅿️ 停车场',
-        hqPopup: '<b>入境事务处总部</b><br>将军澳宝邑路61号',
+        hqPopup: '<b>入境事务处总部 (执法大楼)</b><br>将军澳宝邑路61号',
         startPrefix: '起点：',
         gpsBtn: '从我的位置步行',
         myLocation: '<b>您的当前位置</b>',
@@ -182,12 +182,12 @@
         gpsUnsupported: '您的浏览器不支持 GPS 定位功能。'
       },
       'en': {
-        title: 'Immigration Headquarters (TKO)',
+        title: 'Immigration Headquarters (Enforcement Tower)',
         subtitle: '61 Po Yap Road, Tseung Kwan O • Select transport below',
         tabMtr: '🚇 MTR',
         tabBus: '🚌 Bus',
         tabParking: '🅿️ Parking',
-        hqPopup: '<b>Immigration Headquarters</b><br>61 Po Yap Road',
+        hqPopup: '<b>Immigration Headquarters (Enforcement Tower)</b><br>61 Po Yap Road',
         startPrefix: 'Start: ',
         gpsBtn: 'Walk from My Location',
         myLocation: '<b>Your Current Location</b>',
@@ -198,7 +198,7 @@
       }
     };
 
-    // 4. Updated Transport Nodes with Exact Coordinates
+    // 4. Custom [Latitude, Longitude] Waypoint Arrays
     const transportData = {
       mtr: [
         {
@@ -213,7 +213,12 @@
             'zh-CN': '经 PopCorn 及有盖人行天桥',
             'en': 'Via PopCorn & covered walkway'
           },
-          coord: [22.306994, 114.259030]
+          path: [
+            [22.306994, 114.259030],
+            [22.306350, 114.257650],
+            [22.305850, 114.256700],
+            IMMD_HQ
+          ]
         },
         {
           id: 'mtr-tkl',
@@ -227,23 +232,32 @@
             'zh-CN': '沿宝邑路步行前往',
             'en': 'Walk along Po Yap Road'
           },
-          coord: [22.304470, 114.252955]
+          path: [
+            [22.304470, 114.252955],
+            [22.305100, 114.253500],
+            [22.305650, 114.255400],
+            IMMD_HQ
+          ]
         }
       ],
       bus: [
         {
-          id: 'bus-tiukengleng',
+          id: 'bus-poyap2',
           name: {
-            'zh-HK': '調景嶺站巴士站',
-            'zh-CN': '调景岭站公交站',
-            'en': 'Tiu Keng Leng Station Bus Stop'
+            'zh-HK': '寶邑路站 (入境事務處總部外)',
+            'zh-CN': '宝邑路站 (入境事务处总部外)',
+            'en': 'Po Yap Road (Outside Immigration Headquarters)'
           },
           desc: {
-            'zh-HK': '位置：寶邑路近調景嶺站',
-            'zh-CN': '位置：宝邑路近调景岭站',
-            'en': 'Location: Po Yap Rd near TKL Station'
+            'zh-HK': '位於入境事務處總部正門外',
+            'zh-CN': '位于入境事务处总部正门外',
+            'en': 'Directly outside Immigration HQ'
           },
-          coord: [22.305128, 114.252770]
+          path: [
+            [22.305937, 114.257233], // Start: Po Yap Road (Outside Immigration HQ)
+            [22.305700, 114.256750], // Waypoint along Po Yap Rd (edit as needed)
+            IMMD_HQ                  // End: Immigration HQ
+          ]
         },
         {
           id: 'bus-poyap',
@@ -257,10 +271,50 @@
             'zh-CN': '途经路线：793, 795X, 796X, 798',
             'en': 'Routes: 793, 795X, 796X, 798'
           },
-          coord: [22.306282, 114.257182]
+          path: [
+            [22.306282, 114.257182],
+            [22.305850, 114.256700],
+            IMMD_HQ
+          ]
+        },
+        {
+          id: 'bus-tiukengleng',
+          name: {
+            'zh-HK': '調景嶺站巴士站',
+            'zh-CN': '调景岭站公交站',
+            'en': 'Tiu Keng Leng Station Bus Stop'
+          },
+          desc: {
+            'zh-HK': '位置：寶邑路近調景嶺站',
+            'zh-CN': '位置：宝邑路近调景嶺站',
+            'en': 'Location: Po Yap Rd near TKL Station'
+          },
+          path: [
+            [22.305128, 114.252770],
+            [22.305650, 114.255400],
+            IMMD_HQ
+          ]
         }
       ],
       parking: [
+        {
+          id: 'park-gov-offices',
+          name: {
+            'zh-HK': '將軍澳政府合署公眾停車場',
+            'zh-CN': '将军澳政府合署公众停车场',
+            'en': 'TKO Government Offices Public Car Park'
+          },
+          desc: {
+            'zh-HK': '新界將軍澳唐賢街30號',
+            'zh-CN': '新界将军澳唐贤街30号',
+            'en': '30 Tong Yin Street, Tseung Kwan O'
+          },
+          path: [
+            [22.304257, 114.256887],
+            [22.304850, 114.256550],
+            IMMD_HQ
+          ]
+        },
         {
           id: 'park-chuishin',
           name: {
@@ -273,7 +327,30 @@
             'zh-CN': '邻近入境处新总部大楼',
             'en': 'Close to new Immigration HQ'
           },
-          coord: [22.304917, 114.255482]
+          path: [
+            [22.304917, 114.255482],
+            [22.305150, 114.255900],
+            IMMD_HQ
+          ]
+        },
+        {
+          id: 'park-popcorn-1',
+          name: {
+            'zh-HK': 'PopCorn 一期停車場',
+            'zh-CN': 'PopCorn 一期停车场',
+            'en': 'PopCorn Phase 1 Car Park'
+          },
+          desc: {
+            'zh-HK': '新界西貢區唐賢街9號',
+            'zh-CN': '新界西贡区唐贤街9号',
+            'en': '9 Tong Yin Street, Tseung Kwan O'
+          },
+          path: [
+            [22.307227, 114.258877], // Start: PopCorn Phase 1 Car Park
+            [22.306350, 114.257650], // Waypoint along footbridge / Po Yap Rd (edit as needed)
+            [22.305850, 114.256700], // Waypoint approaching HQ (edit as needed)
+            IMMD_HQ                  // End: Immigration HQ
+          ]
         },
         {
           id: 'park-central',
@@ -287,13 +364,31 @@
             'zh-CN': '车辆入口位于唐德街',
             'en': 'Vehicle entrance via Tong Tak Street'
           },
-          coord: [22.307083, 114.258395]
+          path: [
+            [22.307083, 114.258395],
+            [22.306282, 114.257182],
+            [22.305850, 114.256700],
+            IMMD_HQ
+          ]
         }
       ]
     };
 
+    // Helper: Calculate total path distance (meters) and walking time (mins) from your waypoints
+    function calculatePathStats(pathCoords) {
+      let totalMeters = 0;
+      for (let i = 0; i < pathCoords.length - 1; i++) {
+        const p1 = L.latLng(pathCoords[i][0], pathCoords[i][1]);
+        const p2 = L.latLng(pathCoords[i + 1][0], pathCoords[i + 1][1]);
+        totalMeters += p1.distanceTo(p2);
+      }
+      const meters = Math.round(totalMeters);
+      const mins = Math.max(1, Math.round(meters / 75));
+      return { mins, meters };
+    }
+
     // 5. Initialize Map
-    const map = L.map('map', { zoomControl: false }).setView([22.3062, 114.2575], 16);
+    const map = L.map('map', { zoomControl: false }).setView([22.3058, 114.2568], 16);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -306,47 +401,14 @@
     let currentLine = null;
     let startMarker = null;
 
-    // Cache computed walking routes to make switching instant
-    const routeCache = {};
-
-   // Replace your existing fetchOpenStreetMapRoute function with this:
-  async function fetchOpenStreetMapRoute(startCoord, endCoord) {
-  const cacheKey = `${startCoord[0]},${startCoord[1]}-${endCoord[0]},${endCoord[1]}`;
-  if (routeCache[cacheKey]) return routeCache[cacheKey];
-
-  let routeCoords = [startCoord, endCoord];
-  let meters = Math.round(L.latLng(startCoord[0], startCoord[1]).distanceTo(L.latLng(endCoord[0], endCoord[1])));
-  let mins = Math.max(1, Math.round(meters / 75));
-
-  try {
-    // Explicitly use the 'foot' profile with pedestrian pathways enabled
-    const url = `https://router.project-osrm.org/route/v1/foot/${startCoord[1]},${startCoord[0]};${endCoord[1]},${endCoord[0]}?overview=full&geometries=geojson&steps=true`;
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
-      const route = data.routes[0];
-      routeCoords = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
-      meters = Math.round(route.distance);
-      // Average walking speed ~4.8 km/h (80 meters per minute)
-      mins = Math.max(1, Math.round(meters / 80));
-    }
-  } catch (e) {
-    // Fallback to straight line if offline
-  }
-
-  const result = { routeCoords, meters, mins };
-  routeCache[cacheKey] = result;
-  return result;
-}
-
-    // 6. Real-Time GPS Blue Dot + OSRM Walking Route
+    // 6. Real-Time GPS Blue Dot + Live Routing (Only used for GPS button)
     let watchId = null;
     let userMarker = null;
     let accuracyCircle = null;
     let lastRoutedLatLng = null;
     let lastWalkStats = null;
     let hasFittedGpsRoute = false;
+    let isGpsRouteActive = false;
 
     const userDotIcon = L.divIcon({
       className: '',
@@ -363,12 +425,7 @@
       }
 
       if (watchId !== null && userMarker) {
-        if (currentLine) {
-          map.fitBounds(currentLine.getBounds(), { padding: [75, 75] });
-        } else {
-          map.flyTo(userMarker.getLatLng(), 17, { duration: 0.8 });
-        }
-        userMarker.openPopup();
+        drawGpsRoute(userMarker.getLatLng().lat, userMarker.getLatLng().lng, true);
         return;
       }
 
@@ -398,7 +455,7 @@
 
           if (!lastRoutedLatLng || userLatLng.distanceTo(lastRoutedLatLng) > 15) {
             lastRoutedLatLng = userLatLng;
-            drawRouteFromPoint([lat, lng], '#10b981', true);
+            drawGpsRoute(lat, lng, false);
           }
         },
         (err) => {
@@ -410,35 +467,48 @@
       );
     }
 
-    async function drawRouteFromPoint(startCoord, lineColor, isGps = false) {
+    async function drawGpsRoute(userLat, userLng, forceRecenter) {
+      isGpsRouteActive = true;
+      document.querySelectorAll('.route-card').forEach(c => c.classList.remove('selected'));
+
       if (currentLine) map.removeLayer(currentLine);
       if (startMarker) map.removeLayer(startMarker);
 
-      const res = await fetchOpenStreetMapRoute(startCoord, IMMD_HQ);
+      let routeCoords = [[userLat, userLng], IMMD_HQ];
+      let stats = calculatePathStats(routeCoords);
 
-      currentLine = L.polyline(res.routeCoords, {
-        color: lineColor,
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${IMMD_HQ[1]},${IMMD_HQ[0]}?overview=full&geometries=geojson`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          routeCoords = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+          const meters = Math.round(route.distance);
+          const mins = Math.max(1, Math.round(meters / 75));
+          stats = { mins, meters };
+        }
+      } catch (e) {
+        // Fallback to direct line if offline
+      }
+
+      if (currentLine) map.removeLayer(currentLine);
+      currentLine = L.polyline(routeCoords, {
+        color: '#10b981',
         weight: 6,
         opacity: 0.9,
         dashArray: '10, 10'
       }).addTo(map);
 
-      if (isGps) {
-        lastWalkStats = { mins: res.mins, meters: res.meters };
-        updateUserPopup();
-        if (!hasFittedGpsRoute) {
-          map.fitBounds(currentLine.getBounds(), { padding: [75, 75] });
-          userMarker.openPopup();
-          hasFittedGpsRoute = true;
-        }
-      } else {
-        startMarker = L.circleMarker(startCoord, {
-          radius: 8, fillColor: '#ff5722', color: '#fff', weight: 2, fillOpacity: 1
-        }).addTo(map);
-        map.fitBounds(currentLine.getBounds(), { padding: [75, 75] });
-      }
+      lastWalkStats = stats;
+      updateUserPopup();
 
-      return res;
+      if (!hasFittedGpsRoute || forceRecenter) {
+        map.fitBounds(currentLine.getBounds(), { padding: [75, 75] });
+        userMarker.openPopup();
+        hasFittedGpsRoute = true;
+      }
     }
 
     function updateUserPopup() {
@@ -469,10 +539,15 @@
 
       hqMarker.setPopupContent(t.hqPopup);
       updateUserPopup();
-      renderOptions(currentCategory, selectedIndex);
+
+      if (isGpsRouteActive) {
+        renderOptions(currentCategory, -1);
+      } else {
+        renderOptions(currentCategory, selectedIndex);
+      }
     }
 
-    // 8. Render Transport Options & Load OSM Walking Times
+    // 8. Render Custom Transport Options
     function filterCategory(category, btnElement) {
       currentCategory = category;
       selectedIndex = 0;
@@ -483,51 +558,57 @@
       renderOptions(category, 0);
     }
 
-    async function renderOptions(category, activeIdx) {
+    function renderOptions(category, activeIdx) {
       const container = document.getElementById('options-container');
       container.innerHTML = '';
 
       const items = transportData[category];
-      for (let index = 0; index < items.length; index++) {
-        const item = items[index];
+      items.forEach((item, index) => {
+        const stats = calculatePathStats(item.path);
         const card = document.createElement('div');
         card.className = 'route-card';
-        
-        // Initial placeholder while fetching OpenStreetMap walking duration
         card.innerHTML = `
           <div>
             <div class="route-title">${item.name[currentLang]}</div>
             <div class="route-sub">${item.desc[currentLang]}</div>
           </div>
-          <div class="route-badge" id="badge-${category}-${index}">計算中...</div>
+          <div class="route-badge">${uiStrings[currentLang].routeEstimate(stats.mins, stats.meters)}</div>
         `;
-        
         card.onclick = () => selectRoute(item, card, index);
         container.appendChild(card);
-
-        // Fetch walking time from OSRM
-        fetchOpenStreetMapRoute(item.coord, IMMD_HQ).then(res => {
-          const badge = document.getElementById(`badge-${category}-${index}`);
-          if (badge) {
-            badge.textContent = uiStrings[currentLang].routeEstimate(res.mins, res.meters);
-          }
-        });
 
         if (index === activeIdx) {
           selectRoute(item, card, index);
         }
-      }
+      });
     }
 
+    // 9. Draw Your Custom Waypoint Path on Map
     function selectRoute(item, cardElement, index) {
+      isGpsRouteActive = false;
       selectedIndex = index;
+
       document.querySelectorAll('.route-card').forEach(c => c.classList.remove('selected'));
       cardElement.classList.add('selected');
 
-      drawRouteFromPoint(item.coord, '#0066cc', false).then(res => {
-        const popupText = `<b>${uiStrings[currentLang].startPrefix}</b>${item.name[currentLang]}<br><span style="color:#0066cc;font-weight:700;">${uiStrings[currentLang].routeEstimate(res.mins, res.meters)}</span>`;
-        if (startMarker) startMarker.bindPopup(popupText).openPopup();
-      });
+      if (currentLine) map.removeLayer(currentLine);
+      if (startMarker) map.removeLayer(startMarker);
+
+      currentLine = L.polyline(item.path, {
+        color: '#0066cc',
+        weight: 6,
+        opacity: 0.85,
+        dashArray: '10, 10'
+      }).addTo(map);
+
+      const stats = calculatePathStats(item.path);
+      const popupText = `<b>${uiStrings[currentLang].startPrefix}</b>${item.name[currentLang]}<br><span style="color:#0066cc;font-weight:700;">${uiStrings[currentLang].routeEstimate(stats.mins, stats.meters)}</span>`;
+
+      startMarker = L.circleMarker(item.path[0], {
+        radius: 8, fillColor: '#ff5722', color: '#fff', weight: 2, fillOpacity: 1
+      }).addTo(map).bindPopup(popupText).openPopup();
+
+      map.fitBounds(currentLine.getBounds(), { padding: [75, 75] });
     }
 
     // Initialize default view
