@@ -104,6 +104,80 @@
       background: #e6f0fa; color: #0066cc; font-size: 12px; font-weight: 700;
       padding: 4px 8px; border-radius: 8px; white-space: nowrap; flex-shrink: 0;
     }
+
+    /* Event notice */
+    .event-notice {
+      position: absolute;
+      top: 88px;
+      left: 12px;
+      right: 12px;
+      z-index: 1000;
+      display: flex;
+      gap: 12px;
+      background: #ffffff;
+      border: 1px solid #dce2ec;
+      border-left: 5px solid #0066cc;
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+    
+    .notice-image {
+      width: 86px;
+      height: 86px;
+      object-fit: cover;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    
+    .notice-content {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .notice-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a2b4c;
+      margin-bottom: 6px;
+    }
+    
+    .notice-detail {
+      font-size: 12px;
+      color: #444;
+      line-height: 1.45;
+      margin: 0;
+    }
+    
+    .notice-close {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      color: #666;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 50%;
+    }
+    
+    .notice-close:hover {
+      background: #eef1f6;
+    }
+    
+    @media (max-width: 400px) {
+      .event-notice {
+        top: 96px;
+      }
+    
+      .notice-image {
+        width: 72px;
+        height: 72px;
+      }
+    }
+    
   </style>
 </head>
 <body>
@@ -119,7 +193,34 @@
       <button class="lang-btn" onclick="setLanguage('en', this)">EN</button>
     </div>
   </div>
-
+  
+  <section id="event-notice" class="event-notice" aria-labelledby="notice-title">
+    <button
+      id="notice-close"
+      class="notice-close"
+      type="button"
+      aria-label="Close notice"
+    >
+      ✕
+    </button>
+  
+    <img
+      class="notice-image"
+      src="notice.jpg"
+      alt="Immigration Department event notice"
+    />
+  
+    <div class="notice-content">
+      <h2 id="notice-title" class="notice-title">
+        Immigration Department
+      </h2>
+  
+      <p class="notice-detail" id="notice-date"></p>
+      <p class="notice-detail" id="notice-time"></p>
+      <p class="notice-detail" id="notice-place"></p>
+    </div>
+  </section>
+  
   <button id="gps-btn" class="gps-btn" onclick="toggleGPS()" aria-label="Walk from My Location">
     <svg viewBox="0 0 24 24">
       <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
@@ -165,6 +266,13 @@
         routeEstimate: (mins, meters) => `約 ${mins} 分鐘 (${meters}米)`,
         gpsDenied: '無法取得位置。請在手機瀏覽器設定中允許存取「位置資訊」。',
         gpsUnsupported: '您的瀏覽器不支援 GPS 定位功能。'
+        notice: {
+          title: '入境事務處',
+          date: '日期：2026年11月16日',
+          time: '時間：上午9時至下午5時',
+          place: '地點：將軍澳寶邑路61號入境事務處總部（行政大樓）'
+        },
+        
       },
       'zh-CN': {
         title: '入境事务处总部 (行政大楼)',
@@ -180,6 +288,13 @@
         routeEstimate: (mins, meters) => `约 ${mins} 分钟 (${meters}米)`,
         gpsDenied: '无法获取位置。请在手机浏览器设置中允许访问“信息”。',
         gpsUnsupported: '您的浏览器不支持 GPS 定位功能。'
+
+        notice: {
+          title: '入境事务处',
+          date: '日期：2026年11月16日',
+          time: '时间：上午9时至下午5时',
+          place: '地点：将军澳宝邑路61号入境事务处总部（行政大楼）'
+        },
       },
       'en': {
         title: 'Immigration Headquarters (Administration Tower)',
@@ -195,6 +310,12 @@
         routeEstimate: (mins, meters) => `~${mins} min (${meters}m)`,
         gpsDenied: 'Location access denied. Please enable Location Services in your phone browser settings.',
         gpsUnsupported: 'GPS geolocation is not supported by your browser.'
+        notice: {
+          title: 'Immigration Department',
+          date: 'Date: 16 November 2026',
+          time: 'Time: 9:00 am – 5:00 pm',
+          place: 'Venue: Immigration Headquarters (Administration Tower), 61 Po Yap Road, Tseung Kwan O'
+        },
       }
     };
 
@@ -217,34 +338,29 @@
             [22.30701, 114.25903],
             [22.30693, 114.25879],
             [22.30693, 114.25879],
-            [22.30689, 114.2588],
-            [22.30689, 114.2588],
+            [22.30689, 114.25880],
+            [22.30689, 114.25880],
             [22.30687, 114.25872],
-            [22.30684, 114.2586],
+            [22.30684, 114.25860],
             [22.30683, 114.25853],
             [22.30683, 114.25853],
             [22.30676, 114.25853],
-            [22.30669, 114.2585],
-            [22.30666, 114.2584],
-            [22.30666, 114.2584],
+            [22.30669, 114.25850],
+            [22.30666, 114.25840],
+            [22.30666, 114.25840],
             [22.30661, 114.25843],
             [22.30649, 114.25847],
-            [22.3064, 114.2585],
-            [22.30638, 114.2585],
-            [22.30638, 114.2585],
+            [22.30640, 114.25850],
+            [22.30638, 114.25850],
+            [22.30638, 114.25850],
             [22.30635, 114.25847],
             [22.30611, 114.25782],
-            [22.30604, 114.25764],
-            [22.30597, 114.25745],
-            [22.30589, 114.25722],
-            [22.30578, 114.25692],
-            [22.30575, 114.25682],
-            [22.30549, 114.25613],
-            [22.30549, 114.25613],
-            [22.30545, 114.25615],
-            [22.30549, 114.25624],
-            [22.30545, 114.25626],
-            [22.30545, 114.25626],
+            [22.30611, 114.25782],
+            [22.30602, 114.25782],
+            [22.30595, 114.25765],
+            [22.30587, 114.25743],
+            [22.30580, 114.25746],
+            [22.30580, 114.25746],
             IMMD_HQ
           ]
         },
@@ -858,12 +974,17 @@
       if (btnElement) btnElement.classList.add('active');
 
       const t = uiStrings[lang];
+      document.getElementById('notice-title').textContent = t.notice.title;
+      document.getElementById('notice-date').textContent = t.notice.date;
+      document.getElementById('notice-time').textContent = t.notice.time;
+      document.getElementById('notice-place').textContent = t.notice.place;
       document.getElementById('ui-title').textContent = t.title;
       document.getElementById('ui-subtitle').textContent = t.subtitle;
       document.getElementById('tab-mtr').textContent = t.tabMtr;
       document.getElementById('tab-bus').textContent = t.tabBus;
       document.getElementById('tab-parking').textContent = t.tabParking;
       document.getElementById('gps-btn-label').textContent = t.gpsBtn;
+
 
       hqMarker.setPopupContent(t.hqPopup);
       updateUserPopup();
@@ -938,7 +1059,9 @@
 
       map.fitBounds(currentLine.getBounds(), { padding: [75, 75] });
     }
-
+      document.getElementById('notice-close').addEventListener('click', () => {
+        document.getElementById('event-notice').style.display = 'none';
+      });
     // Initialize default view
     renderOptions('mtr', 0);
   </script>
