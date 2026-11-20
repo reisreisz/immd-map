@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>入境事務處總部(行政大樓)路線指南 | Immigration Headquarters (Administration Tower) Wayfinder</title>
   
-  <!-- Leaflet CSS (Free Open-Source Map Library) -->
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   
   <style>
@@ -41,39 +41,6 @@
       background: #1a2b4c; color: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
-    /* Floating GPS Locate & Route Button */
-    .gps-btn {
-      position: absolute; bottom: 255px; right: 14px; z-index: 1000;
-      height: 46px; padding: 0 14px; border-radius: 23px;
-      background: #ffffff; border: 1.5px solid #e0e4ec;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.16);
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      cursor: pointer; transition: all 0.2s ease; color: #1a2b4c;
-      font-size: 13px; font-weight: 700;
-    }
-    .gps-btn:active { transform: scale(0.95); }
-    .gps-btn.tracking {
-      background: #10b981; color: #ffffff; border-color: #10b981;
-    }
-    .gps-btn svg { width: 20px; height: 20px; fill: currentColor; flex-shrink: 0; }
-
-    /* Pulsing User GPS Blue Dot */
-    .user-dot-container { position: relative; width: 20px; height: 20px; }
-    .user-dot-core {
-      position: absolute; top: 3px; left: 3px; width: 14px; height: 14px;
-      background: #007aff; border: 2.5px solid #ffffff; border-radius: 50%;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.35); z-index: 2;
-    }
-    .user-dot-pulse {
-      position: absolute; top: 0; left: 0; width: 20px; height: 20px;
-      background: rgba(0, 122, 255, 0.4); border-radius: 50%;
-      animation: gpsPulse 2s infinite ease-out; z-index: 1;
-    }
-    @keyframes gpsPulse {
-      0% { transform: scale(1); opacity: 0.8; }
-      100% { transform: scale(2.8); opacity: 0; }
-    }
-
     /* Bottom UX Control Panel */
     .bottom-panel {
       position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000;
@@ -104,13 +71,53 @@
       background: #e6f0fa; color: #0066cc; font-size: 12px; font-weight: 700;
       padding: 4px 8px; border-radius: 8px; white-space: nowrap; flex-shrink: 0;
     }
+
+    /* Lands Department Map Attribution Footer */
+    .map-attribution {
+      position: absolute; bottom: 220px; right: 12px; z-index: 999;
+      background: rgba(255, 255, 255, 0.85); padding: 4px 8px; border-radius: 4px;
+      font-size: 10px; color: #444; backdrop-filter: blur(4px); pointer-events: auto;
+    }
+    .map-attribution a { color: #0066cc; text-decoration: none; }
+    .route-step-tooltip {
+        background: #ffffff;
+        color: #1a2b4c;
+        border: 1px solid #0066cc;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 6px 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .route-step-tooltip::before {
+      display: none;
+    }
+  
+    .bottom-panel { padding: 10px 12px; }
+    .bottom-panel .route-sub { display: none; }
+    .bottom-panel .route-card { padding: 8px 10px; }
+    .bottom-panel.route-collapsed .options-list { display: none; }
+    .panel-toggle { width: 100%; border: 0; background: #eef1f6; color: #1a2b4c;
+      border-radius: 8px; padding: 8px; margin-bottom: 8px; cursor: pointer;
+      text-align: left; font-size: 13px; }
+    body.route-focus .header p { display: none; }
+
+    .route-card { width: 100%; }
+    .leaflet-tooltip.parking-name-tooltip {
+      background: transparent; border: 0; box-shadow: none; padding: 0;
+      color: #1a2b4c; font-size: 12px; font-weight: 700;
+      white-space: normal; max-width: 180px; pointer-events: none;
+      text-shadow: -1px 0 #fff, 1px 0 #fff, 0 -1px #fff, 0 1px #fff;
+    }
+    .leaflet-tooltip.parking-name-tooltip::before { display: none; }
   </style>
 </head>
 <body>
 
   <div class="header">
     <div class="header-text">
-      <h1 id="ui-title">入境事務處總部 (行政大樓)</h1>
+      <h1 id="ui-title">入境事務處總部(行政大樓)</h1>
       <p id="ui-subtitle">將軍澳寶邑路61號 • 請在下方選擇交通工具</p>
     </div>
     <div class="lang-switcher" role="group" aria-label="Language Switcher">
@@ -120,19 +127,23 @@
     </div>
   </div>
 
-  <button id="gps-btn" class="gps-btn" onclick="toggleGPS()" aria-label="Walk from My Location">
-    <svg viewBox="0 0 24 24">
-      <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
-    </svg>
-    <span id="gps-btn-label">從我的位置步行</span>
-  </button>
-
   <div id="map"></div>
 
+  <!-- Lands Department Attribution Overlay -->
+  <div class="map-attribution">
+    地圖資料 © 香港特別行政區政府
+    <a href="https://www.landsd.gov.hk" target="_blank" rel="noopener">地政總署</a><br>
+    Map data © Lands Department, The Government of the Hong Kong SAR<br>
+    <a href="https://www.geodata.gov.hk/gs/terms-and-conditions" target="_blank" rel="noopener">
+      條款及細則 / Terms and Conditions
+    </a>
+  </div>
+
   <div class="bottom-panel">
+    <button id="panel-toggle" class="panel-toggle" type="button" onclick="toggleRoutePanel()" aria-expanded="true"></button>
     <div class="tabs">
       <button id="tab-mtr" class="tab-btn active" onclick="filterCategory('mtr', this)">🚇 港鐵</button>
-      <button id="tab-bus" class="tab-btn" onclick="filterCategory('bus', this)">🚌 巴士</button>
+      <button id="tab-bus" class="tab-btn" onclick="filterCategory('bus', this)">🚌 巴士/小巴</button>
       <button id="tab-parking" class="tab-btn" onclick="filterCategory('parking', this)">🅿️ 停車場</button>
     </div>
     <div id="options-container" class="options-list"></div>
@@ -142,59 +153,44 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     // 1. Destination Coordinate: Immigration HQ - Administration Tower (61 Po Yap Road)
-    //const IMMD_HQ = [22.305426, 114.256254];
     const IMMD_HQ = [22.305825, 114.257445];
+
     // 2. App State
     let currentLang = 'zh-HK';
     let currentCategory = 'mtr';
-    let selectedIndex = 0;
+    let selectedIndex = -1;
 
     // 3. Trilingual UI Dictionary
     const uiStrings = {
       'zh-HK': {
-        title: '入境事務處總部 (行政大樓)',
+        title: '入境事務處總部(行政大樓)',
         subtitle: '將軍澳寶邑路61號 • 請在下方選擇交通工具',
         tabMtr: '🚇 港鐵',
         tabBus: '🚌 巴士/小巴',
         tabParking: '🅿️ 停車場',
         hqPopup: '<b>入境事務處總部 (行政大樓)</b><br>將軍澳寶邑路61號',
         startPrefix: '起點：',
-        gpsBtn: '從我的位置步行',
-        myLocation: '<b>您的目前位置</b>',
-        walkEstimate: (mins, meters) => `<br><span style="color:#10b981;font-weight:700;">步行約 ${mins} 分鐘 (${meters}米)</span>`,
-        routeEstimate: (mins, meters) => `約 ${mins} 分鐘 (${meters}米)`,
-        gpsDenied: '無法取得位置。請在手機瀏覽器設定中允許存取「位置資訊」。',
-        gpsUnsupported: '您的瀏覽器不支援 GPS 定位功能。'
+        routeEstimate: (mins, meters) => `約 ${mins} 分鐘 (${meters}米)`
       },
       'zh-CN': {
-        title: '入境事务处总部 (行政大楼)',
+        title: '入境事务处总部(行政大楼)',
         subtitle: '将军澳宝邑路61号 • 请在下方选择交通工具',
         tabMtr: '🚇 港铁',
         tabBus: '🚌 公交',
         tabParking: '🅿️ 停车场',
-        hqPopup: '<b>入境事务处总部 (行政大楼)</b><br>将军澳宝邑路61号',
+        hqPopup: '<b>入境事务处总部(行政大楼)</b><br>将军澳宝邑路61号',
         startPrefix: '起点：',
-        gpsBtn: '从我的位置步行',
-        myLocation: '<b>您的当前位置</b>',
-        walkEstimate: (mins, meters) => `<br><span style="color:#10b981;font-weight:700;">步行约 ${mins} 分钟 (${meters}米)</span>`,
-        routeEstimate: (mins, meters) => `约 ${mins} 分钟 (${meters}米)`,
-        gpsDenied: '无法获取位置。请在手机浏览器设置中允许访问“信息”。',
-        gpsUnsupported: '您的浏览器不支持 GPS 定位功能。'
+        routeEstimate: (mins, meters) => `约 ${mins} 分钟 (${meters}米)`
       },
       'en': {
-        title: 'Immigration Headquarters (Administration Tower)',
+        title: 'Immigration Headquarters(Administration Tower)',
         subtitle: '61 Po Yap Road, Tseung Kwan O • Select transport below',
         tabMtr: '🚇 MTR',
         tabBus: '🚌 Bus / Minibus',
         tabParking: '🅿️ Parking',
         hqPopup: '<b>Immigration Headquarters (Administration Tower)</b><br>61 Po Yap Road',
         startPrefix: 'Start: ',
-        gpsBtn: 'Walk from My Location',
-        myLocation: '<b>Your Current Location</b>',
-        walkEstimate: (mins, meters) => `<br><span style="color:#10b981;font-weight:700;">~${mins} min walk (${meters}m)</span>`,
-        routeEstimate: (mins, meters) => `~${mins} min (${meters}m)`,
-        gpsDenied: 'Location access denied. Please enable Location Services in your phone browser settings.',
-        gpsUnsupported: 'GPS geolocation is not supported by your browser.'
+        routeEstimate: (mins, meters) => `~${mins} min (${meters}m)`
       }
     };
 
@@ -213,34 +209,55 @@
             'zh-CN': '自定步行路径',
             'en': 'Custom walking path'
           },
+          color: '#7c3aed',
+          fillColor: '#a78bfa',
+          polygon: [
+            [22.3071382, 114.2589712],
+            [22.3069716, 114.2590374],
+            [22.3075903, 114.2608524],
+            [22.3077636, 114.2607789],
+            [22.3071382, 114.2589712]
+          ],
           path: [
-             [22.30701, 114.25903],
-              [22.30693, 114.25879],
-              [22.30693, 114.25879],
-              [22.30689, 114.25880],
-              [22.30689, 114.25880],
-              [22.30687, 114.25872],
-              [22.30684, 114.25860],
-              [22.30683, 114.25853],
-              [22.30683, 114.25853],
-              [22.30676, 114.25853],
-              [22.30669, 114.25850],
-              [22.30666, 114.25840],
-              [22.30666, 114.25840],
-              [22.30661, 114.25843],
-              [22.30649, 114.25847],
-              [22.30640, 114.25850],
-              [22.30638, 114.25850],
-              [22.30638, 114.25850],
-              [22.30635, 114.25847],
-              [22.30611, 114.25782],
-              [22.30611, 114.25782],
-              [22.30602, 114.25782],
-              [22.30595, 114.25765],
-              [22.30587, 114.25743],
-              [22.30580, 114.25746],
-              [22.30580, 114.25746],
+            [22.30701, 114.25903],
+            [22.30693, 114.25879],
+            [22.30689, 114.25880],
+            [22.30687, 114.25872],
+            [22.30684, 114.25860],
+            [22.30683, 114.25853],
+            [22.30676, 114.25853],
+            [22.30669, 114.25850],
+            [22.30666, 114.25840],
+            [22.30661, 114.25843],
+            [22.30649, 114.25847],
+            [22.30640, 114.25850],
+            [22.30638, 114.25850],
+            [22.30635, 114.25847],
+            [22.30611, 114.25782],
+            [22.30602, 114.25782],
+            [22.30595, 114.25765],
+            [22.30587, 114.25743],
+            [22.30580, 114.25746],
             IMMD_HQ
+          ],
+          steps: [
+            {
+              coords: [22.30701, 114.25903],
+              text: {
+                'zh-HK': '由將軍澳站 B1 出口出發',
+                'zh-CN': '由将军澳站 B1 出口出发',
+                'en': 'Start from Tseung Kwan O Station Exit B1'
+              }
+            },
+          
+            {
+              coords: [22.30580, 114.25746],
+              text: {
+                'zh-HK': '到達入境事務處總部入口',
+                'zh-CN': '到达境事务处总部入口',
+                'en': 'Arrived at the entrance of Immigration Headquarters'
+              }
+            }
           ]
         },
         {
@@ -255,27 +272,22 @@
             'zh-CN': '沿宝邑路步行前往',
             'en': 'Walk along Po Yap Road'
           },
+          color: '#0284c7',
+          fillColor: '#38bdf8',
+          polygon: [
+            [22.3034384, 114.2513733],
+            [22.3046417, 114.2527548],
+            [22.304431, 114.2529826],
+            [22.3032174, 114.2515717],
+            [22.3032208, 114.2515717],
+            [22.3034384, 114.2513733]
+          ],
           path: [
             [22.30448, 114.25295],
-            [22.30456, 114.25305],
-            [22.30462, 114.25298],
-            [22.30462, 114.25298],
-            [22.30472, 114.2531],
-            [22.30472, 114.2531],
-            [22.30466, 114.25314],
-            [22.30466, 114.25314],
-            [22.30468, 114.25318],
-            [22.30473, 114.25327],
-            [22.30477, 114.25333],
-            [22.30477, 114.25336],
-            [22.30479, 114.25342],
-            [22.30481, 114.25344],
-            [22.30481, 114.25344],
-            [22.30478, 114.25346],
-            [22.30474, 114.2535],
-            [22.30466, 114.25357],
-            [22.30459, 114.25363],
-            [22.30458, 114.25365],
+            [22.304490, 114.253119],
+            [22.304488, 114.253140],
+            [22.304312, 114.253325],
+            [22.304575, 114.253650],
             [22.30458, 114.25365],
             [22.30466, 114.25377],
             [22.30471, 114.25391],
@@ -283,48 +295,64 @@
             [22.30479, 114.25401],
             [22.30495, 114.25426],
             [22.30499, 114.25437],
-            [22.30499, 114.25439],
             [22.30497, 114.25443],
             [22.30495, 114.25443],
-            [22.30495, 114.25443],
             [22.30499, 114.25453],
-            [22.30502, 114.2546],
             [22.30502, 114.2546],
             [22.30505, 114.2546],
             [22.30507, 114.2546],
             [22.30509, 114.25461],
             [22.30512, 114.25465],
             [22.30526, 114.25517],
-            [22.30527, 114.25519],
-            [22.30528, 114.25523],
-            [22.30528, 114.25526],
-            [22.30528, 114.25528],
-            [22.30528, 114.25528],
-            [22.30525, 114.25524],
-            [22.30524, 114.25518],
-            [22.30526, 114.25522],
-            [22.30526, 114.25522],
-            [22.30539, 114.25549],
-            [22.30539, 114.25549],
-            [22.30537, 114.25552],
-            [22.30535, 114.25556],
+  
+            [22.30535, 114.25556], // Lift
             [22.30535, 114.25562],
             [22.30541, 114.25579],
             [22.30545, 114.25592],
             [22.30545, 114.25594],
-            [22.30548, 114.25597],
-            [22.3055, 114.25604],
-            [22.30547, 114.25598],
-            [22.30547, 114.25598],
-            [22.30544, 114.25599],
-            [22.30544, 114.25599],
-            [22.30549, 114.25613],
+            [22.30548, 114.25597], // Lift
+ 
+  
+           
             [22.30549, 114.25613],
             [22.30545, 114.25615],
             [22.30549, 114.25624],
             [22.30545, 114.25626],
-            [22.30545, 114.25626],
             IMMD_HQ
+          ],
+          steps: [
+            {
+              coords: [22.30448, 114.25295],
+              text: {
+                'zh-HK': '調景嶺站A2出口出發',
+                'zh-CN': '调景岭站A2出口出发',
+                'en': 'Start from Tiu Keng Leng Station Exit A2'
+              }
+            },
+            {
+              coords: [22.30580, 114.25746],
+              text: {
+                'zh-HK': '到達入境事務處總部入口',
+                'zh-CN': '到达入境事务处总部入口',
+                'en': 'Arrived at the entrance of Immigration Headquarters'
+              }
+            },
+            {
+              coords: [22.305490, 114.256045],
+              text: {
+                'zh-HK': '乘搭升降機前往入境處總部(執法大樓)入口',
+                'zh-CN': '乘搭升降机前往入境处总部(执法大楼)入口',
+                'en': 'Take the lift to the entrance of the Immigration Department Headquarters (Enforcement Tower)'
+              }
+            },
+            {
+              coords: [22.305240, 114.255189],
+              text: {
+                'zh-HK': '乘搭升降機前往行人天橋',
+                'zh-CN': '乘搭升降机前往行人天桥',
+                'en': 'Take the lift to the pedestrian footbridge.'
+              }
+            }
           ]
         }
       ],
@@ -332,40 +360,137 @@
         {
           id: 'bus-poyap2',
           name: {
-            'zh-HK': '寶邑路站 (入境事務處總部外)',
-            'zh-CN': '宝邑路站 (入境事务处总部外)',
-            'en': 'Po Yap Road (Outside Immigration Headquarters)'
+            'zh-HK': '寶邑路站 (入境事務處總部外) - 途經路線：九巴:96, 290E, 290X; 城巴:795X, A28X, E22A, E22S, 專線小巴:108A, 116',
+            'zh-CN': '宝邑路站 (入境事务处总部外) - 途经路线：九巴:96, 290E, 290X; 城巴:795X, A28X, E22A, E22S, 专线小巴:108A, 116',
+            'en': 'Po Yap Road (Outside Immigration Headquarters) - Routes: KMB:96, 290E, 290X; Citybus:795X, A28X, E22A, E22S; Minibus: 108A, 116'
           },
           desc: {
-            'zh-HK': '途經路線：96, 290E, 290X, N290, E22A, E22S, N29, 108A, 116 ',
-            'zh-CN': '途经路线：96, 290E, 290X, N290, E22A, E22S, N29, 108A, 116',
-            'en': 'Routes: 96, 290E, 290X, N290, E22A, E22S, N29, 108A, 116'
+            'zh-HK': '途經路線：九巴:96, 290E, 290X; 城巴:795X, A28X, E22A, E22S, 專線小巴:108A, 116',
+            'zh-CN': '途经路线：九巴:96, 290E, 290X; 城巴:795X, A28X, E22A, E22S, 专线小巴:108A, 116',
+            'en': 'Routes: KMB:96, 290E, 290X; Citybus:795X, A28X, E22A, E22S; Minibus: 108A, 116'
           },
           path: [
-             [22.30591, 114.25727],
+            [22.30591, 114.25727],
             [22.30597, 114.25745],
             [22.30604, 114.25764],
-            [22.30611, 114.25782],
             [22.30611, 114.25782],
             [22.30602, 114.25782],
             [22.30595, 114.25765],
             [22.30587, 114.25743],
             [22.30580, 114.25746],
-            [22.30580, 114.25746],
             IMMD_HQ
           ]
         },
         {
+          id: 'bus-king-ling-road',
+        
+          name: {
+            'zh-HK': '景嶺路 - 途經路線：九巴:; 城巴:792M; 專線小巴:',
+            'zh-CN': '景岭路 - 途经路线：九巴:; 城巴:792M; 专线小巴:',
+            'en': 'King Ling Road - Routes: KMB:; Citybus:792M; Minibus:'
+          },
+        
+          desc: {
+            'zh-HK': '途經路線：九巴:; 城巴:792M; 專線小巴:',
+            'zh-CN': '途经路线：九巴:; 城巴:792M; 专线小巴:',
+            'en': 'Routes: KMB:; Citybus:792M; Minibus:'
+          },
+        
+          path: [
+            // Bus-stop location: [latitude, longitude]
+            [22.305309, 114.252920],
+              [22.30536,114.25298, ],
+              [22.30532,114.25301, ],
+              [22.30512, 114.25313],
+              [22.30478, 114.25332],
+              [22.30477, 114.25333],
+              [22.30477, 114.25336],
+              [22.30479, 114.25342],
+              [22.30481, 114.25344],
+              [22.30481, 114.25344],
+              [22.30478, 114.25346],
+              [22.30474, 114.25350],
+              [22.30466, 114.25357],
+              [22.30459, 114.25363],
+              [22.30458, 114.25365],
+              [22.30458, 114.25365],
+              [22.30466, 114.25377],
+              [22.30471, 114.25391],
+              [22.30475, 114.25398],
+              [22.30479, 114.25401],
+              [22.30499, 114.25437],
+              [22.30497, 114.25443],
+              [22.30495, 114.25443],
+              [22.30499, 114.25453],
+              [22.30502, 114.2546],
+              [22.30505, 114.2546],
+              [22.30507, 114.2546],
+              [22.30509, 114.25461],
+              [22.30512, 114.25465],
+              [22.30526, 114.25517],
+              [22.30535, 114.25556], // Lift
+              [22.30535, 114.25562],
+              [22.30541, 114.25579],
+              [22.30545, 114.25592],
+              [22.30545, 114.25594],
+              [22.30548, 114.25597], // Lift
+              [22.30549, 114.25613],
+              [22.30545, 114.25615],
+              [22.30549, 114.25624],
+              [22.30545, 114.25626],
+              IMMD_HQ
+              //].map(([lng, lat]) => [lat, lng])
+            ],
+          
+          steps: [
+            {
+              coords: [22.305309, 114.252920],
+              text: {
+                'zh-HK': '由景嶺路巴士／小巴站出發 ',
+                'zh-CN': '由景岭路公交站出发',
+                'en': 'Start from the King Ling Road bus/minibus stop'
+              }
+            },
+            {
+              coords: [22.30458, 114.25365],
+              text: {
+                'zh-HK': '沿地圖所示路線繼續步行',
+                'zh-CN': '沿地图所示路线继续步行',
+                'en': 'Continue along the route shown on the map'
+              }
+            },
+            {
+              coords: [22.30512, 114.25465],
+              text: {
+                'zh-HK': '沿所示路線前往入境事務處總部',
+                'zh-CN': '沿所示路线前往入境事务处总部',
+                'en': 'Follow the marked route towards Immigration Headquarters'
+              }
+            },
+            
+            {
+              coords: [22.30581, 114.25746],
+              text: {
+                'zh-HK': '到達此步行路線終點，請依現場指示前往入口',
+                'zh-CN': '到达此步行路线终点，请依现场指示前往入口',
+                'en': 'Reach the end of this walking route; follow on-site signs to the entrance'
+              }
+            }
+          ]
+        },
+
+        
+        {
           id: 'bus-poyap',
           name: {
-            'zh-HK': '寶邑路站 (將軍澳中心外)',
-            'zh-CN': '宝邑路站 (将军澳中心外)',
-            'en': 'Po Yap Road (Outside Park Central)'
+            'zh-HK': '寶邑路站 (將軍澳中心外) - 途經路線：九巴:96, 290E, 290X; 城巴:795X, 796S, 796P, A28, E22A, E22S, E28; 專線小巴:108A',
+            'zh-CN': '宝邑路站 (将军澳中心外) - 途经路线：九巴:96, 290E, 290X; 城巴:795X, 796S, 796P, A28, E22A, E22S, E28; 专线小巴:108A',
+            'en': 'Po Yap Road (Outside Park Central) - Routes: KMB:96, 290E, 290X; Citybus:795X, 796S, 796P, A28, E22A, E22S, E28; Minibus: 108A'
           },
           desc: {
-            'zh-HK': '途經路線：108A, 796S, A28, E22A, E22S, E28, N29, 96, 290E, 290X, N290',
-            'zh-CN': '途经路线：108A, 796S, A28, E22A, E22S, E28, N29, 96, 290E, 290X, N290',
-            'en': 'Routes: 108A, 796S, A28, E22A, E22S, E28, N29, 96, 290E, 290X, N290'
+            'zh-HK': '途經路線：九巴:96, 290E, 290X; 城巴:795X, 796S, 796P, A28, E22A, E22S, E28; 專線小巴:108A',
+            'zh-CN': '途经路线：九巴:96, 290E, 290X; 城巴:795X, 796S, 796P, A28, E22A, E22S, E28; 专线小巴:108A',
+            'en': 'Routes: KMB:96, 290E, 290X; Citybus:795X, 796S, 796P, A28, E22A, E22S, E28; Minibus: 108A'
           },
           path: [
             [22.30629, 114.25718],
@@ -373,19 +498,15 @@
             [22.30648, 114.25783],
             [22.30658, 114.25814],
             [22.30666, 114.25840],
-            [22.30666, 114.25840],
             [22.30661, 114.25843],
             [22.30649, 114.25847],
             [22.30640, 114.25850],
             [22.30638, 114.25850],
-            [22.30638, 114.25850],
             [22.30635, 114.25847],
-            [22.30611, 114.25782],
             [22.30611, 114.25782],
             [22.30602, 114.25782],
             [22.30595, 114.25765],
             [22.30587, 114.25743],
-            [22.30580, 114.25746],
             [22.30580, 114.25746],
             IMMD_HQ
           ]
@@ -393,9 +514,9 @@
         {
           id: 'bus-tiukengleng',
           name: {
-            'zh-HK': '調景嶺站巴士站',
-            'zh-CN': '调景岭站公交站',
-            'en': 'Tiu Keng Leng Station Bus Stop'
+            'zh-HK': '調景嶺站巴士站 - 九巴:; 城巴:694, 694S, 793, 796R, 796X, 798; 專線小巴:',
+            'zh-CN': '调景岭站公交站 - 九巴:; 城巴:694, 694S, 793, 796R, 796X, 798; 专线小巴:108A',
+            'en': 'Tiu Keng Leng Station Bus Stop - Routes: KMB:; Citybus:694, 694S, 793, 796R, 796X, 798; Minibus:'
           },
           desc: {
             'zh-HK': '位置：寶邑路近調景嶺站',
@@ -408,10 +529,7 @@
             [22.30473, 114.25287],
             [22.30468, 114.25292],
             [22.30462, 114.25298],
-            [22.30462, 114.25298],
             [22.30472, 114.25310],
-            [22.30472, 114.25310],
-            [22.30466, 114.25314],
             [22.30466, 114.25314],
             [22.30468, 114.25318],
             [22.30473, 114.25327],
@@ -419,12 +537,10 @@
             [22.30477, 114.25336],
             [22.30479, 114.25342],
             [22.30481, 114.25344],
-            [22.30481, 114.25344],
             [22.30478, 114.25346],
             [22.30474, 114.25350],
             [22.30466, 114.25357],
             [22.30459, 114.25363],
-            [22.30458, 114.25365],
             [22.30458, 114.25365],
             [22.30466, 114.25377],
             [22.30471, 114.25391],
@@ -432,12 +548,9 @@
             [22.30479, 114.25401],
             [22.30495, 114.25426],
             [22.30499, 114.25437],
-            [22.30499, 114.25439],
             [22.30497, 114.25443],
             [22.30495, 114.25443],
-            [22.30495, 114.25443],
             [22.30499, 114.25453],
-            [22.30502, 114.25460],
             [22.30502, 114.25460],
             [22.30505, 114.25460],
             [22.30507, 114.25460],
@@ -448,12 +561,9 @@
             [22.30528, 114.25523],
             [22.30528, 114.25526],
             [22.30528, 114.25528],
-            [22.30528, 114.25528],
             [22.30525, 114.25524],
             [22.30524, 114.25518],
             [22.30526, 114.25522],
-            [22.30526, 114.25522],
-            [22.30539, 114.25549],
             [22.30539, 114.25549],
             [22.30537, 114.25552],
             [22.30535, 114.25556],
@@ -464,8 +574,6 @@
             [22.30548, 114.25597],
             [22.30550, 114.25604],
             [22.30547, 114.25598],
-            [22.30547, 114.25598],
-            [22.30544, 114.25599],
             [22.30544, 114.25599],
             [22.30549, 114.25613],
             [22.30575, 114.25682],
@@ -474,230 +582,229 @@
             [22.30597, 114.25745],
             [22.30604, 114.25764],
             [22.30611, 114.25782],
-            [22.30611, 114.25782],
             [22.30602, 114.25782],
             [22.30595, 114.25765],
             [22.30587, 114.25743],
-            [22.30580, 114.25746],
             [22.30580, 114.25746],
             IMMD_HQ
           ]
         }
       ],
       parking: [
-  {
-    id: 'park-gov-offices',
-    name: {
-      'zh-HK': '將軍澳政府合署公眾停車場',
-      'zh-CN': '将军澳政府合署公众停车场',
-      'en': 'TKO Government Offices Public Car Park'
-    },
-    desc: {
-      'zh-HK': '乘搭升降機或扶手電梯前往1/F，經唐賢街郵局前往入境事務處總部（行政大樓）',
-      'zh-CN': '乘搭升降机或扶手电梯前往1/F，经唐贤街邮局前往入境事务处总部（行政大楼）',
-      'en': 'Take the lift or escalator to 1/F, then walk past Tong Yin Street Post Office to reach the Immigration Headquarters (Administration Tower)'
-    },
-    path: [
-      [22.3042858, 114.2567717],
-      [22.3048613, 114.2567686],
-      [22.3050409, 114.2568809],
-      [22.3051308, 114.2568809],
-      [22.3051196, 114.2569992],
-      [22.3051280, 114.2571904],
-      [22.3053301, 114.2576637],
-      [22.3057793, 114.2574604],
-      [22.3057821, 114.2574604],
-      IMMD_HQ
-    ]
-  },
-  {
-    id: 'park-chuishin',
-    name: {
-      'zh-HK': '翠嶺路 / 寶邑路停車場',
-      'zh-CN': '翠岭路 / 宝邑路停车场',
-      'en': 'Chui Shin Street Car Park'
-    },
-    desc: {
-      'zh-HK': '鄰近入境處新總部大樓',
-      'zh-CN': '邻近入境处新总部大楼',
-      'en': 'Close to new Immigration HQ'
-    },
-    path: [
-      [22.30492, 114.25533],
-      [22.30493, 114.25537],
-      [22.30493, 114.25544],
-      [22.30493, 114.25546],
-      [22.30493, 114.25546],
-      [22.30503, 114.25546],
-      [22.30508, 114.25546],
-      [22.30515, 114.25544],
-      [22.30524, 114.25538],
-      [22.30527, 114.25533],
-      [22.30528, 114.25528],
-      [22.30528, 114.25528],
-      [22.30525, 114.25524],
-      [22.30524, 114.25518],
-      [22.30526, 114.25522],
-      [22.30526, 114.25522],
-      [22.30539, 114.25549],
-      [22.30539, 114.25549],
-      [22.30537, 114.25552],
-      [22.30535, 114.25556],
-      [22.30535, 114.25562],
-      [22.30541, 114.25579],
-      [22.30545, 114.25592],
-      [22.30545, 114.25594],
-      [22.30548, 114.25597],
-      [22.30550, 114.25604],
-      [22.30547, 114.25598],
-      [22.30547, 114.25598],
-      [22.30544, 114.25599],
-      [22.30544, 114.25599],
-      [22.30549, 114.25613],
-      [22.30575, 114.25682],
-      [22.30578, 114.25692],
-      [22.30589, 114.25722],
-      [22.30597, 114.25745],
-      [22.30604, 114.25764],
-      [22.30611, 114.25782],
-      [22.30611, 114.25782],
-      [22.30602, 114.25782],
-      [22.30595, 114.25765],
-      [22.30587, 114.25743],
-      [22.30581, 114.25746],
-      [22.30581, 114.25746],
-      IMMD_HQ
-    ]
-  },
-  {
-    id: 'park-popcorn-1',
-    name: {
-      'zh-HK': 'PopCorn 一期停車場',
-      'zh-CN': 'PopCorn 一期停车场',
-      'en': 'PopCorn Phase 1 Car Park'
-    },
-    desc: {
-      'zh-HK': '新界西貢區唐賢街9號',
-      'zh-CN': '新界西贡区唐贤街9号',
-      'en': '9 Tong Yin Street, Tseung Kwan O'
-    },
-    path: [
-      [22.30706, 114.25873],
-      [22.30702, 114.25874],
-      [22.30693, 114.25879],
-      [22.30689, 114.25880],
-      [22.30689, 114.25880],
-      [22.30687, 114.25872],
-      [22.30684, 114.25860],
-      [22.30683, 114.25853],
-      [22.30683, 114.25853],
-      [22.30676, 114.25853],
-      [22.30669, 114.25850],
-      [22.30666, 114.25840],
-      [22.30666, 114.25840],
-      [22.30661, 114.25843],
-      [22.30649, 114.25847],
-      [22.30640, 114.25850],
-      [22.30638, 114.25850],
-      [22.30638, 114.25850],
-      [22.30635, 114.25847],
-      [22.30611, 114.25782],
-      [22.30611, 114.25782],
-      [22.30602, 114.25782],
-      [22.30595, 114.25765],
-      [22.30587, 114.25743],
-      [22.30581, 114.25746],
-      [22.30581, 114.25746],
-      IMMD_HQ
-    ]
-  },
-  {
-    id: 'park-central',
-    name: {
-      'zh-HK': '將軍澳中心停車場',
-      'zh-CN': '将军澳中心停车场',
-      'en': 'Park Central Car Park'
-    },
-    desc: {
-      'zh-HK': '車輛入口位於唐德街',
-      'zh-CN': '车辆入口位于唐德街',
-      'en': 'Vehicle entrance via Tong Tak Street'
-    },
-    path: [
-      [22.30707, 114.25835],
-      [22.30710, 114.25843],
-      [22.30710, 114.25843],
-      [22.30683, 114.25853],
-      [22.30683, 114.25853],
-      [22.30676, 114.25853],
-      [22.30669, 114.25850],
-      [22.30666, 114.25840],
-      [22.30666, 114.25840],
-      [22.30661, 114.25843],
-      [22.30649, 114.25847],
-      [22.30640, 114.25850],
-      [22.30638, 114.25850],
-      [22.30638, 114.25850],
-      [22.30635, 114.25847],
-      [22.30611, 114.25782],
-      [22.30611, 114.25782],
-      [22.30602, 114.25782],
-      [22.30595, 114.25765],
-      [22.30587, 114.25743],
-      [22.30581, 114.25746],
-      [22.30581, 114.25746],
-      IMMD_HQ
-    ]
-  },
-  {
-    id: 'park-tongyin',
-    name: {
-      'zh-HK': '唐賢街停車場',
-      'zh-CN': '唐贤街停车场',
-      'en': 'Tong Yin Street Car Park'
-    },
-    desc: {
-      'zh-HK': '位於唐賢街，請按現場指示前往',
-      'zh-CN': '位于唐贤街，请按现场指示前往',
-      'en': 'Located on Tong Yin Street. Please follow on-site signs.'
-    },
-    path: [
-      [22.30362, 114.25813],
-      [22.30362, 114.25817],
-      [22.30364, 114.25831],
-      [22.30367, 114.25842],
-      [22.30378, 114.25858],
-      [22.30386, 114.25864],
-      [22.30394, 114.25866],
-      [22.30408, 114.25867],
-      [22.30433, 114.25864],
-      [22.30463, 114.25864],
-      [22.30469, 114.25860],
-      [22.30471, 114.25856],
-      [22.30471, 114.25856],
-      [22.30481, 114.25856],
-      [22.30494, 114.25856],
-      [22.30494, 114.25856],
-      [22.30492, 114.25854],
-      [22.30492, 114.25826],
-      [22.30492, 114.25822],
-      [22.30490, 114.25814],
-      [22.30490, 114.25778],
-      [22.30490, 114.25745],
-      [22.30490, 114.25745],
-      [22.30496, 114.25745],
-      [22.30501, 114.25745],
-      [22.30507, 114.25745],
-      [22.30507, 114.25769],
-      [22.30530, 114.25769],
-      [22.30546, 114.25762],
-      [22.30546, 114.25762],
-      IMMD_HQ
-    ]
-  }
-]
-};
-    // Helper: Calculate total path distance (meters) and walking time (mins) from your waypoints
+        {
+          id: 'park-gov-offices',
+          name: {
+            'zh-HK': '將軍澳政府合署公眾停車場',
+            'zh-CN': '将军澳政府合署公众停车场',
+            'en': 'TKO Government Offices Public Car Park'
+          },
+          desc: {
+            'zh-HK': '乘搭升降機或扶手電梯前往1/F，經唐賢街郵局前往入境事務處總部（行政大樓）',
+            'zh-CN': '乘搭升降机或扶手电梯前往1/F，经唐贤街邮局前往入境事务处总部（行政大楼）',
+            'en': 'Take lift/escalator to 1/F, walk past Tong Yin St Post Office to Admin Tower'
+          },
+          color: '#15803d',
+          fillColor: '#789ee4',
+          polygon: [
+            [22.304482, 114.256707],
+            [22.304482, 114.257067],
+            [22.303867, 114.257067],
+            [22.303867, 114.256707]
+          ],
+          path: [
+            [22.3042858, 114.2567717],
+            [22.3048613, 114.2567686],
+            [22.3050409, 114.2568809],
+            [22.3051308, 114.2568809],
+            [22.3051196, 114.2569992],
+            [22.3051280, 114.2571904],
+            [22.3053301, 114.2576637],
+            [22.3057793, 114.2574604],
+            IMMD_HQ
+          ],
+    
+          steps: [
+            {
+              coords: [22.304282, 114.2567885],
+              text: {
+                'zh-HK': '乘搭升降機或扶手電梯前往1/F',
+                'zh-CN': '乘搭升降机或扶手电梯前往1/F',
+                'en': 'Take lift/escalator to 1/F'
+              }
+            },
+          {
+              coords: [22.304838, 114.256774],
+              text: {
+                'zh-HK': '經唐賢街郵局前往入境事務處總部（行政大樓）',
+                'zh-CN': '经唐贤街邮局前往入境事务处总部（行政大楼）',
+                'en': 'Walk past Tong Yin St Post Office to Admin Tower'
+              }
+            }
+          ]
+        },
+        {
+          id: 'park-chuishin',
+          name: {
+            'zh-HK': '翠嶺路停車場',
+            'zh-CN': '翠岭路停车场',
+            'en': 'Chui Shin Street Car Park'
+          },
+          desc: {
+            'zh-HK': '鄰近入境處總部(執法大樓)',
+            'zh-CN': '邻近入境处总部(执法大楼)', 
+            'en': 'Close to new Immigration Headquarters (Enforcement Tower)'
+          },
+          color: '#15803d',
+          fillColor: '#789ee4',
+          polygon: [
+            [22.3050396, 114.2546041],
+            [22.3052672, 114.2552798],
+            [22.3052005, 114.2553848],
+            [22.3050851, 114.2554439],
+            [22.3049000, 114.2554504],
+            [22.3044508, 114.2554471],
+            [22.3043901, 114.2554439],
+            [22.3043446, 114.2553783],
+            [22.3043446, 114.2552831],
+            [22.3043446, 114.2551617],
+            [22.3043628, 114.2550108],
+            [22.3044265, 114.2548960],
+            [22.3045601, 114.2547910],
+            [22.3050426, 114.2545942]
+          ],
+          path: [
+            [22.30492, 114.25533],
+            [22.30493, 114.25544],
+            [22.30503, 114.25546],
+            [22.30515, 114.25544],
+            [22.30524, 114.25538],
+            [22.30528, 114.25528],
+            [22.30539, 114.25549],
+            [22.30541, 114.25579],
+            [22.30545, 114.25592],
+            [22.30550, 114.25604],
+            [22.30549, 114.25613],
+            [22.30575, 114.25682],
+            [22.30589, 114.25722],
+            [22.30604, 114.25764],
+            [22.30602, 114.25782],
+            [22.30595, 114.25765],
+            [22.30581, 114.25746],
+            IMMD_HQ
+          ]
+        },
+        {
+          id: 'park-popcorn-1',
+          name: {
+            'zh-HK': 'PopCorn 一期停車場',
+            'zh-CN': 'PopCorn 一期停车场',
+            'en': 'PopCorn Phase 1 Car Park'
+          },
+          desc: {
+            'zh-HK': '新界西貢區唐賢街9號',
+            'zh-CN': '新界西贡区唐贤街9号',
+            'en': '9 Tong Yin Street, Tseung Kwan O'
+          },
+          color: '#15803d',
+          fillColor: '#789ee4',
+          polygon: [
+            [22.3081287, 114.2583976],
+            [22.3074548, 114.2586440],
+            [22.3075967, 114.2590493],
+            [22.3082655, 114.2587919],
+            [22.3082605, 114.2587974],
+            [22.3081287, 114.2583976]
+          ],
+          path: [
+            [22.30706, 114.25873],
+            [22.30693, 114.25879],
+            [22.30689, 114.25880],
+            [22.30684, 114.25860],
+            [22.30676, 114.25853],
+            [22.30666, 114.25840],
+            [22.30649, 114.25847],
+            [22.30638, 114.25850],
+            [22.30611, 114.25782],
+            [22.30602, 114.25782],
+            [22.30595, 114.25765],
+            [22.30581, 114.25746],
+            IMMD_HQ
+          ]
+        },
+        {
+          id: 'park-central',
+          name: {
+            'zh-HK': '將軍澳中心停車場',
+            'zh-CN': '将军澳中心停车场',
+            'en': 'Park Central Car Park'
+          },
+          desc: {
+            'zh-HK': '車輛入口位於唐德街',
+            'zh-CN': '车辆入口位于唐德街',
+            'en': 'Vehicle entrance via Tong Tak Street'
+          },
+          color: '#15803d',
+          fillColor: '#789ee4',
+          polygon: [
+            [22.3076687, 114.2580767],
+            [22.3073353, 114.2570822],
+            [22.3070821, 114.2571690],
+            [22.3074094, 114.2581635],
+            [22.3076749, 114.2580767]
+          ],
+          path: [
+            [22.307068, 114.258344],
+            [22.306657, 114.258416],
+            [22.306379, 114.258505],
+            [22.306111, 114.257818],
+            [22.306016, 114.257810],
+            [22.305855, 114.257418],
+            IMMD_HQ
+          ]
+        },
+        {
+          id: 'park-tongyin',
+          name: {
+            'zh-HK': '唐賢街停車場',
+            'zh-CN': '唐贤街停车场',
+            'en': 'Tong Yin Street Car Park'
+          },
+          desc: {
+            'zh-HK': '位於唐賢街，請按現場指示前往',
+            'zh-CN': '位于唐贤街，请按现场指示前往',
+            'en': 'Located on Tong Yin Street. Please follow on-site signs.'
+          },
+          color: '#15803d',
+          fillColor: '#789ee4',
+          polygon: [
+            [22.3046717, 114.2579459],
+            [22.3046717, 114.2585894],
+            [22.3038966, 114.2586053],
+            [22.3036637, 114.25836],
+            [22.3036519, 114.2579523],
+            [22.3046717, 114.2579459]
+          ],
+          path: [
+            [22.30362, 114.25813],
+            [22.3036637, 114.25836],
+            [22.3038966, 114.2586053],
+            [22.3046717, 114.2585894],
+            [22.30463, 114.25864],
+            [22.30471, 114.25856],
+            [22.30494, 114.25856],
+            [22.30492, 114.25826],
+            [22.30490, 114.25778],
+            [22.305076, 114.257778],
+            [22.305071, 114.257673],
+            [22.30530, 114.25769],
+            [22.30546, 114.25762],
+            IMMD_HQ
+          ]
+        }
+      ]
+    };
+
+    // Helper: Calculate path stats
     function calculatePathStats(pathCoords) {
       let totalMeters = 0;
       for (let i = 0; i < pathCoords.length - 1; i++) {
@@ -710,232 +817,468 @@
       return { mins, meters };
     }
 
-    // 5. Initialize Map
-    const map = L.map('map', { zoomControl: false }).setView([22.3058, 114.2568], 16);
+    // 5. Initialize Map with Lands Department GeoCommunity Map Tiles
+    const tkoBounds = L.latLngBounds(
+      [22.307967, 114.249798],
+      [22.301307, 114.264006]
+    );
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19
+    const map = L.map('map', {
+      zoomControl: false,
+      maxBounds: tkoBounds,
+      maxBoundsViscosity: 1.0,
+      minZoom: 13,
+      maxZoom: 19,
+      zoomSnap: 0.1
+    });
+    //.setView([22.304825, 114.257536], 16);
+    // Fit the whole area, with a 16 px margin on each side.
+      map.fitBounds(tkoBounds, {
+        padding: [16, 16],
+        animate: false
+      });
+
+    // Save the actual initial view.
+    const originalMapCenter = map.getCenter();
+    const originalMapZoom = map.getZoom();
+
+    // Lands Dept Map Tile Layer
+    L.tileLayer('https://mapapi.hkmapservice.gov.hk/gs/api/v1.0.0/xyz/basemap/WGS84/{z}/{x}/{y}.png', {
+      maxZoom: 20,
+      minZoom: 10,
+      attribution:
+        '地圖資料 © 香港特別行政區政府地政總署<br>' +
+        'Map data © Lands Department, The Government of the Hong Kong SAR'
     }).addTo(map);
 
+    const labelLayers = {
+      'zh-HK': L.tileLayer(
+        'https://mapapi.hkmapservice.gov.hk/gs/api/v1.0.0/xyz/label/hk/tc/WGS84/{z}/{x}/{y}.png',
+        { maxZoom: 20, minZoom: 8 }
+      ),
+      'zh-CN': L.tileLayer(
+        'https://mapapi.hkmapservice.gov.hk/gs/api/v1.0.0/xyz/label/hk/sc/WGS84/{z}/{x}/{y}.png',
+        { maxZoom: 20, minZoom: 8 }
+      ),
+      'en': L.tileLayer(
+        'https://mapapi.hkmapservice.gov.hk/gs/api/v1.0.0/xyz/label/hk/en/WGS84/{z}/{x}/{y}.png',
+        { maxZoom: 20, minZoom: 8 }
+      )
+    };
+
+    let activeLabelLayer = labelLayers[currentLang].addTo(map);
+
     const hqMarker = L.marker(IMMD_HQ).addTo(map)
-      .bindPopup(uiStrings[currentLang].hqPopup).openPopup();
+      .bindPopup(uiStrings[currentLang].hqPopup);
+
+    // Highlight Immigration HQ footprint with a yellow polygon
+    const immdHqPolygonCoords = [
+      [22.305666, 114.257061],
+      [22.305900, 114.257748],
+      [22.305669, 114.257791],
+      [22.305644, 114.257724],
+      [22.305349, 114.257834],
+      [22.305150, 114.257281]
+    ];
+
+    const immdHqPolygon = L.polygon(immdHqPolygonCoords, {
+      color: '#d97706',
+      weight: 2.5,
+      opacity: 0.95,
+      fillColor: '#facc15',
+      fillOpacity: 0.35
+    })
+      .addTo(map)
+      .bindPopup(uiStrings[currentLang].hqPopup);
 
     let currentLine = null;
     let startMarker = null;
+    let routeStepMarkers = [];
+    let parkingPolygons = [];
+    let mtrPolygons = [];
 
-    // 6. Real-Time GPS Blue Dot + Live Routing (Only used for GPS button)
-    let watchId = null;
-    let userMarker = null;
-    let accuracyCircle = null;
-    let lastRoutedLatLng = null;
-    let lastWalkStats = null;
-    let hasFittedGpsRoute = false;
-    let isGpsRouteActive = false;
+    const busStopLayer = L.layerGroup().addTo(map);
 
-    const userDotIcon = L.divIcon({
-      className: '',
-      html: '<div class="user-dot-container"><div class="user-dot-pulse"></div><div class="user-dot-core"></div></div>',
-      iconSize: [20, 20],
-      iconAnchor: [10, 10]
-    });
+    function renderBusStops() {
+      busStopLayer.clearLayers();
 
-    function toggleGPS() {
-      const gpsBtn = document.getElementById('gps-btn');
-      if (!navigator.geolocation) {
-        alert(uiStrings[currentLang].gpsUnsupported);
-        return;
-      }
+      // Only display stop circles while the bus/minibus tab is active.
+      if (currentCategory !== 'bus') return;
 
-      if (watchId !== null && userMarker) {
-        drawGpsRoute(userMarker.getLatLng().lat, userMarker.getLatLng().lng, true);
-        return;
-      }
+      transportData.bus.forEach((stop, index) => {
+        if (!stop.path || !stop.path.length) return;
 
-      gpsBtn.classList.add('tracking');
-      hasFittedGpsRoute = false;
+        const isSelected = selectedIndex === index;
 
-      watchId = navigator.geolocation.watchPosition(
-        (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          const acc = pos.coords.accuracy;
-          const userLatLng = L.latLng(lat, lng);
+        const circle = L.circleMarker(stop.path[0], {
+          radius: isSelected ? 12 : 9,
+          color: '#cc0000',
+          weight: isSelected ? 3 : 2,
+          opacity: 1,
+          fillColor: '#ff0000',
+          fillOpacity: isSelected ? 0.45 : 0.2
+        })
+          .bindTooltip(stop.name[currentLang], {
+            direction: 'top',
+            offset: [0, -10],
+            className: 'route-step-tooltip'
+          })
+          .addTo(busStopLayer);
 
-          if (!userMarker) {
-            userMarker = L.marker(userLatLng, { icon: userDotIcon, zIndexOffset: 1000 })
-              .addTo(map)
-              .bindPopup(uiStrings[currentLang].myLocation);
+        circle.on('click', () => {
+          const cards = document.querySelectorAll(
+            '#options-container .route-card'
+          );
 
-            accuracyCircle = L.circle(userLatLng, {
-              radius: acc, color: '#007aff', fillColor: '#007aff', fillOpacity: 0.12, weight: 1
-            }).addTo(map);
-          } else {
-            userMarker.setLatLng(userLatLng);
-            accuracyCircle.setLatLng(userLatLng);
-            accuracyCircle.setRadius(acc);
-          }
-
-          if (!lastRoutedLatLng || userLatLng.distanceTo(lastRoutedLatLng) > 15) {
-            lastRoutedLatLng = userLatLng;
-            drawGpsRoute(lat, lng, false);
-          }
-        },
-        (err) => {
-          gpsBtn.classList.remove('tracking');
-          watchId = null;
-          alert(uiStrings[currentLang].gpsDenied);
-        },
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
-      );
+          selectRoute(stop, cards[index] || null, index);
+        });
+      });
     }
 
-    async function drawGpsRoute(userLat, userLng, forceRecenter) {
-      isGpsRouteActive = true;
-      document.querySelectorAll('.route-card').forEach(c => c.classList.remove('selected'));
 
-      if (currentLine) map.removeLayer(currentLine);
-      if (startMarker) map.removeLayer(startMarker);
 
-      let routeCoords = [[userLat, userLng], IMMD_HQ];
-      let stats = calculatePathStats(routeCoords);
-
-      try {
-        const url = `https://router.project-osrm.org/route/v1/foot/${userLng},${userLat};${IMMD_HQ[1]},${IMMD_HQ[0]}?overview=full&geometries=geojson`;
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
-          const route = data.routes[0];
-          routeCoords = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
-          const meters = Math.round(route.distance);
-          const mins = Math.max(1, Math.round(meters / 75));
-          stats = { mins, meters };
-        }
-      } catch (e) {
-        // Fallback to direct line if offline
+    function clearActiveRoute() {
+      if (currentLine) {
+        map.removeLayer(currentLine);
+        currentLine = null;
       }
-
-      if (currentLine) map.removeLayer(currentLine);
-      currentLine = L.polyline(routeCoords, {
-        color: '#10b981',
-        weight: 6,
-        opacity: 0.9,
-        dashArray: '10, 10'
-      }).addTo(map);
-
-      lastWalkStats = stats;
-      updateUserPopup();
-
-      if (!hasFittedGpsRoute || forceRecenter) {
-        map.fitBounds(currentLine.getBounds(), { padding: [75, 75] });
-        userMarker.openPopup();
-        hasFittedGpsRoute = true;
+      if (startMarker) {
+        map.removeLayer(startMarker);
+        startMarker = null;
+      }
+      if (routeStepMarkers.length > 0) {
+        routeStepMarkers.forEach(marker => map.removeLayer(marker));
+        routeStepMarkers = [];
       }
     }
 
-    function updateUserPopup() {
-      if (!userMarker) return;
-      const t = uiStrings[currentLang];
-      let html = t.myLocation;
-      if (lastWalkStats) {
-        html += t.walkEstimate(lastWalkStats.mins, lastWalkStats.meters);
+    function clearMtrPolygons() {
+      if (mtrPolygons.length > 0) {
+        mtrPolygons.forEach(poly => map.removeLayer(poly));
+        mtrPolygons = [];
       }
-      userMarker.setPopupContent(html);
     }
 
-    // 7. Switch Language Handler
+    function renderMtrPolygons(selectedMtrId = null) {
+      clearMtrPolygons();
+
+      if (currentCategory !== 'mtr') return;
+
+      transportData.mtr.forEach((station, index) => {
+        if (!station.polygon) return;
+
+        const isSelected = station.id === selectedMtrId;
+        const poly = L.polygon(station.polygon, {
+          color: station.color || '#0066cc',
+          weight: isSelected ? 3.5 : 2.5,
+          opacity: isSelected ? 1 : 0.85,
+          fillColor: station.fillColor || '#3b82f6',
+          fillOpacity: isSelected ? 0.45 : 0.25
+        })
+          .addTo(map)
+          .bindTooltip(station.name[currentLang], {
+            direction: 'top',
+            className: 'route-step-tooltip'
+          });
+
+        poly.on('click', () => {
+          const cards = document.querySelectorAll('#options-container .route-card');
+          const targetCard = cards[index] || null;
+          selectRoute(station, targetCard, index);
+        });
+
+        mtrPolygons.push(poly);
+      });
+    }
+
+    // 6. Switch Language Handler
+    function updateLabelLayer(lang) {
+      const nextLayer = labelLayers[lang] || labelLayers['en'];
+      if (activeLabelLayer && activeLabelLayer !== nextLayer && map.hasLayer(activeLabelLayer)) {
+        map.removeLayer(activeLabelLayer);
+      }
+      if (!map.hasLayer(nextLayer)) {
+        nextLayer.addTo(map);
+      }
+      activeLabelLayer = nextLayer;
+    }
+
     function setLanguage(lang, btnElement) {
       currentLang = lang;
       document.documentElement.lang = lang;
 
-      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-      if (btnElement) btnElement.classList.add('active');
+      document.querySelectorAll('.lang-btn').forEach(b => {
+        b.classList.remove('active');
+      });
+
+      if (btnElement) {
+        btnElement.classList.add('active');
+      }
 
       const t = uiStrings[lang];
+
       document.getElementById('ui-title').textContent = t.title;
       document.getElementById('ui-subtitle').textContent = t.subtitle;
       document.getElementById('tab-mtr').textContent = t.tabMtr;
       document.getElementById('tab-bus').textContent = t.tabBus;
       document.getElementById('tab-parking').textContent = t.tabParking;
-      document.getElementById('gps-btn-label').textContent = t.gpsBtn;
 
       hqMarker.setPopupContent(t.hqPopup);
-      updateUserPopup();
+      immdHqPolygon.setPopupContent(t.hqPopup);
+      updateLabelLayer(lang);
 
-      if (isGpsRouteActive) {
-        renderOptions(currentCategory, -1);
-      } else {
-        renderOptions(currentCategory, selectedIndex);
-      }
+      const wasCollapsed = document.querySelector('.bottom-panel').classList.contains('route-collapsed');
+      renderOptions(currentCategory, selectedIndex);
+      const active = transportData[currentCategory][selectedIndex];
+      if (active) drawRoute(active);
+      setRoutePanelCollapsed(wasCollapsed);
+      updateRoutePanelButton();
+      positionMapCredits();
     }
 
-    // 8. Render Custom Transport Options
+    // 7. Render Custom Transport Options
     function filterCategory(category, btnElement) {
       currentCategory = category;
-      selectedIndex = 0;
-
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      if (btnElement) btnElement.classList.add('active');
-
-      renderOptions(category, 0);
+      selectedIndex = -1;
+      document.querySelectorAll('.tab-btn').forEach(button => {
+        button.classList.toggle('active', button === btnElement);
+      });
+      clearActiveRoute();
+      if (category !== 'parking') clearParkingPolygons();
+      if (category !== 'mtr') clearMtrPolygons();
+      setRoutePanelCollapsed(false);
+      renderOptions(category, selectedIndex);
+      map.stop();
+      map.closePopup();
+      const park = category === 'parking'
+        ? transportData.parking.find(item => item.id === 'park-gov-offices')
+        : null;
+      const center = park?.polygon?.length
+        ? L.polygon(park.polygon).getBounds().getCenter()
+        : park?.path?.[0] ?? originalMapCenter;
+      map.setView(center, originalMapZoom, { animate: false });
     }
 
-    function renderOptions(category, activeIdx) {
+    function renderOptions(category, activeIndex) {
       const container = document.getElementById('options-container');
       container.innerHTML = '';
 
       const items = transportData[category];
+
       items.forEach((item, index) => {
         const stats = calculatePathStats(item.path);
-        const card = document.createElement('div');
-        card.className = 'route-card';
+
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.setAttribute('aria-pressed', String(index === activeIndex));
+        card.className = 'route-card' + (index === activeIndex ? ' selected' : '');
+
         card.innerHTML = `
           <div>
             <div class="route-title">${item.name[currentLang]}</div>
             <div class="route-sub">${item.desc[currentLang]}</div>
           </div>
-          <div class="route-badge">${uiStrings[currentLang].routeEstimate(stats.mins, stats.meters)}</div>
+          <div class="route-badge">
+            ${uiStrings[currentLang].routeEstimate(stats.mins, stats.meters)}
+          </div>
         `;
+
         card.onclick = () => selectRoute(item, card, index);
         container.appendChild(card);
 
-        if (index === activeIdx) {
-          selectRoute(item, card, index);
-        }
+      });
+
+      const selectedItem = activeIndex >= 0 && items[activeIndex] ? items[activeIndex] : null;
+      if (category === 'mtr') {
+        clearParkingPolygons();
+        renderMtrPolygons(selectedItem ? selectedItem.id : null);
+      } else if (category === 'parking') {
+        clearMtrPolygons();
+        renderParkingPolygons(selectedItem ? selectedItem.id : null);
+      } else {
+        clearMtrPolygons();
+        clearParkingPolygons();
+      }
+
+      renderBusStops();
+      
+    }
+
+    // 8. Draw Your Custom Waypoint Path and Turn Instructions
+    function clearParkingPolygons() {
+      if (parkingPolygons.length > 0) {
+        parkingPolygons.forEach(poly => map.removeLayer(poly));
+        parkingPolygons = [];
+      }
+    }
+
+    function renderParkingPolygons(selectedParkId = null) {
+      clearParkingPolygons();
+
+      if (currentCategory !== 'parking') return;
+
+      transportData.parking.forEach((park, index) => {
+        if (!park.polygon) return;
+
+        const isSelectedParking = park.id === selectedParkId;
+        const poly = L.polygon(park.polygon, {
+          color: park.color,
+          weight: isSelectedParking ? 3.5 : 2.5,
+          opacity: isSelectedParking ? 1 : 0.7,
+          fillColor: park.fillColor,
+          fillOpacity: isSelectedParking ? 0.95 : 0.5
+        })
+          .addTo(map)
+          
+          .bindTooltip(park.name[currentLang], {
+            permanent: true,
+            direction: park.labelSide === 'left' ? 'left' : 'right',
+            offset: park.labelSide === 'left' ? [-8, 0] : [8, 0],
+            className: 'parking-name-tooltip',
+            opacity: 1
+          });
+        const bounds = poly.getBounds();
+        poly.openTooltip(park.labelCoords || [bounds.getCenter().lat,
+          park.labelSide === 'left' ? bounds.getWest() : bounds.getEast()]);
+
+        poly.on('click', () => {
+          const cards = document.querySelectorAll('#options-container .route-card');
+          const targetCard = cards[index] || null;
+          selectRoute(park, targetCard, index);
+        });
+
+        parkingPolygons.push(poly);
       });
     }
 
-    // 9. Draw Your Custom Waypoint Path on Map
     function selectRoute(item, cardElement, index) {
-      isGpsRouteActive = false;
       selectedIndex = index;
 
-      document.querySelectorAll('.route-card').forEach(c => c.classList.remove('selected'));
-      cardElement.classList.add('selected');
+      document.querySelectorAll('#options-container .route-card').forEach((card, idx) => {
+        card.classList.toggle('selected', idx === index);
+        card.setAttribute('aria-pressed', String(idx === index));
+      });
+      if (cardElement) {
+        cardElement.classList.add('selected');
+      }
 
-      if (currentLine) map.removeLayer(currentLine);
-      if (startMarker) map.removeLayer(startMarker);
-
-      currentLine = L.polyline(item.path, {
-        color: '#0066cc',
-        weight: 6,
-        opacity: 0.85,
-        dashArray: '10, 10'
-      }).addTo(map);
-
-      const stats = calculatePathStats(item.path);
-      const popupText = `<b>${uiStrings[currentLang].startPrefix}</b>${item.name[currentLang]}<br><span style="color:#0066cc;font-weight:700;">${uiStrings[currentLang].routeEstimate(stats.mins, stats.meters)}</span>`;
-
-      startMarker = L.circleMarker(item.path[0], {
-        radius: 8, fillColor: '#ff5722', color: '#fff', weight: 2, fillOpacity: 1
-      }).addTo(map).bindPopup(popupText).openPopup();
-
-      map.fitBounds(currentLine.getBounds(), { padding: [75, 75] });
+      drawRoute(item);
+      if (currentCategory === 'mtr') renderMtrPolygons(item.id);
+      if (currentCategory === 'parking') renderParkingPolygons(item.id);
+      if (currentCategory === 'bus') renderBusStops();
+      map.closePopup();
+      setRoutePanelCollapsed(true);
+      requestAnimationFrame(fitSelectedRoute);
     }
 
+    function drawRoute(item) {
+      clearActiveRoute();
+      currentLine = L.polyline(item.path, {
+        color: '#ff0000',
+        weight: 12,
+        opacity: 0.5,
+        lineCap: 'round',
+        lineJoin: 'round'
+      }).addTo(map);
+
+      if (item.steps) {
+        item.steps.forEach(step => {
+          const stepMarker = L.circleMarker(step.coords, {
+            radius: 6,
+            color: '#ffffff',
+            fillColor: '#0066cc',
+            fillOpacity: 1,
+            weight: 2
+          })
+            .bindTooltip(step.text[currentLang], {
+              permanent: true,
+              direction: 'top',
+              className: 'route-step-tooltip'
+            })
+            .addTo(map);
+
+          routeStepMarkers.push(stepMarker);
+        });
+      }
+
+      const stats = calculatePathStats(item.path);
+      const popupText =
+        `<b>${uiStrings[currentLang].startPrefix}</b>` +
+        `${item.name[currentLang]}<br>` +
+        `<span style="color:#0066cc;font-weight:700;">` +
+        `${uiStrings[currentLang].routeEstimate(stats.mins, stats.meters)}` +
+        `</span>`;
+      if (currentCategory !== 'bus') {
+        startMarker = L.circleMarker(item.path[0], {
+          radius: 8, fillColor: '#ff5722', color: '#fff', weight: 2, fillOpacity: 1
+        }).addTo(map).bindPopup(popupText);
+      }
+    }
+
+    function updateRoutePanelButton() {
+      const collapsed = document.querySelector('.bottom-panel').classList.contains('route-collapsed');
+      const labels = {
+        'zh-HK': ['收起路線列表', '更改路線'],
+        'zh-CN': ['收起路线列表', '更改路线'],
+        'en': ['Hide route list', 'Change route']
+      };
+      const words = labels[currentLang] || labels.en;
+      const item = selectedIndex >= 0 ? transportData[currentCategory][selectedIndex] : null;
+      const button = document.getElementById('panel-toggle');
+      button.textContent = collapsed && item
+        ? item.name[currentLang] + ' — ' + words[1]
+        : words[collapsed ? 1 : 0];
+      button.setAttribute('aria-expanded', String(!collapsed));
+    }
+
+    function positionMapCredits() {
+      const panel = document.querySelector('.bottom-panel');
+      const credits = document.querySelector('.map-attribution');
+      if (credits) credits.style.bottom = (panel.offsetHeight + 8) + 'px';
+    }
+
+    function setRoutePanelCollapsed(collapsed) {
+      document.querySelector('.bottom-panel').classList.toggle('route-collapsed', collapsed);
+      document.body.classList.toggle('route-focus', collapsed);
+      updateRoutePanelButton();
+      positionMapCredits();
+    }
+
+    function fitSelectedRoute() {
+      if (!currentLine) return;
+      positionMapCredits();
+      map.stop();
+      map.invalidateSize({ pan: false });
+      const frame = map.getContainer().getBoundingClientRect();
+      const header = document.querySelector('.header').getBoundingClientRect();
+      const bottom = ['.bottom-panel', '.map-attribution']
+        .map(selector => document.querySelector(selector))
+        .filter(node => node?.getClientRects().length)
+        .reduce((top, node) => Math.min(top, node.getBoundingClientRect().top), frame.bottom);
+      const topPadding = Math.max(16, header.bottom - frame.top + 16);
+      const bottomPadding = frame.bottom - bottom + 16;
+      if (frame.height <= topPadding + bottomPadding + 40) return;
+      map.fitBounds(currentLine.getBounds(), {
+        paddingTopLeft: [16, topPadding],
+        paddingBottomRight: [16, bottomPadding],
+        animate: false
+      });
+    }
+
+    function toggleRoutePanel() {
+      const collapsed = document.querySelector('.bottom-panel').classList.contains('route-collapsed');
+      setRoutePanelCollapsed(!collapsed);
+      requestAnimationFrame(fitSelectedRoute);
+    }
+
+    window.addEventListener('resize', () => {
+      positionMapCredits();
+      requestAnimationFrame(fitSelectedRoute);
+    });
+
     // Initialize default view
-    renderOptions('mtr', 0);
+    renderOptions('mtr', -1);
+    setRoutePanelCollapsed(false);
   </script>
 </body>
 </html>
