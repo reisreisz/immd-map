@@ -524,11 +524,11 @@
             'zh-CN': '调景岭站公共运输交汇处 - 城巴:694, 793, 796X, 798',
             'en': 'Tiu Keng Leng Station Public Transport Interchange - Routes: Citybus:694, 793, 796X, 798'
           },
-          //desc: {
-            //'zh-HK': '調景嶺站公共運輸交匯處',
-            //'zh-CN': '调景岭站公共运输交汇处',
-            //'en': 'Tiu Keng Leng Station Public Transport Interchange'
-          //},
+          desc: {
+            'zh-HK': '由公共運輸交匯處步行前往入境事務處總部',
+            'zh-CN': '由公共运输交汇处步行前往入境事务处总部',
+            en: 'Walk from the interchange to Immigration Headquarters'
+          },
           path: [
             [22.30498, 114.25260],
             [22.30430, 114.25332],
@@ -1123,7 +1123,7 @@
         card.innerHTML = `
           <div>
             <div class="route-title">${item.name[currentLang]}</div>
-            <div class="route-sub">${item.desc[currentLang]}</div>
+            <div class="route-sub">${item.desc?.[currentLang] ?? item.desc?.en ?? ''}</div>
           </div>
           <div class="route-badge">
             ${uiStrings[currentLang].routeEstimate(stats.mins, stats.meters)}
